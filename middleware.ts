@@ -2,16 +2,16 @@ import { withAuth } from "next-auth/middleware"
 
 export default withAuth(
   function middleware(req) {
-    // Custom logic if needed, but the authorized callback handles the main check
+    // Custom logic can go here
   },
   {
     callbacks: {
       authorized: ({ req, token }) => {
-        // Protect /admin routes: must be logged in AND have role "ADMIN"
+        // Check if the route is /admin and if the user has the ADMIN role
         if (req.nextUrl.pathname.startsWith("/admin")) {
           return token?.role === "ADMIN"
         }
-        // By default, if matched, require login
+        // For other protected routes (if any), just require a session
         return !!token
       },
     },

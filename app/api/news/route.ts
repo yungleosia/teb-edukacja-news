@@ -66,3 +66,28 @@ export async function POST(req: Request) {
         );
     }
 }
+
+export async function DELETE(req: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+
+        if (!session || session.user.role !== "ADMIN") {
+            return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+        }
+
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get("id");
+
+        if (!id) {
+            return NextResponse.json({ message: "Missing id" }, { status: 400 });
+        }
+
+        await prisma.news.delete({
+            where: { id },
+        });
+
+        return NextResponse.json({ message: "News deleted" });
+    } catch (error) {
+        return NextResponse.json({ message: "Internal server error" }, { status: 500 });
+    }
+}
