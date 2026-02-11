@@ -48,7 +48,7 @@ export function Navbar() {
     }, [])
 
     return (
-        <nav className={`fixed w-full z-50 transition-all duration-300 top-0 left-0 ${isScrolled ? "glass-nav py-3" : "bg-transparent py-5"}`}>
+        <nav className={`fixed w-full z-50 transition-all duration-300 top-0 left-0 glass-nav py-4 ${isScrolled ? "bg-[#0f172a]/80" : "bg-[#0f172a]/40"}`}>
             <div className="container mx-auto px-6 flex justify-between items-center relative">
                 {/* Logo */}
                 <Link href="/" className="text-2xl font-bold tracking-tighter hover:opacity-80 transition z-20">

@@ -99,7 +99,7 @@ export function ProfileHeader({ user }: { user: UserProps }) {
 
             <div className="text-center md:text-left space-y-2 z-10">
                 <h1 className="text-4xl font-bold text-white">{user.name}</h1>
-                <p className="text-gray-400 font-mono transition-all duration-300 blur-sm hover:blur-none select-all">
+                <p className="text-gray-400 font-mono transition-all duration-300 blur-[3px] hover:blur-none select-all cursor-text">
                     {user.email}
                 </p>
                 <div className="flex gap-2 justify-center md:justify-start mt-2">
