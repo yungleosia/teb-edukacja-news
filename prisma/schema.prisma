@@ -17,6 +17,7 @@ model User {
   email     String      @unique
   password  String
   name      String?
+  image     String?     // Base64 or URL
   role      String      @default("USER") // "USER" or "ADMIN"
   news      News[]
   posts     ForumPost[]
