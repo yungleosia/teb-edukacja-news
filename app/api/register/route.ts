@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +40,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ message: "User created", user }, { status: 201 });
     } catch (error) {
+        console.error("Registration Error:", error);
         return NextResponse.json(
             { message: "Internal server error" },
             { status: 500 }
