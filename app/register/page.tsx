@@ -35,8 +35,8 @@ export default function RegisterPage() {
             }
 
             router.push("/login")
-        } catch (err) {
-            setError("An error occurred")
+        } catch (err: any) {
+            setError(err?.message || "An unexpected error occurred")
         }
     }
 

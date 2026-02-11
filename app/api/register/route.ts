@@ -39,10 +39,10 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({ message: "User created", user }, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Registration Error:", error);
         return NextResponse.json(
-            { message: "Internal server error" },
+            { message: error?.message || "Internal server error" },
             { status: 500 }
         );
     }
