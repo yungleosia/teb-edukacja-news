@@ -20,6 +20,8 @@ model User {
   role      String      @default("USER") // "USER" or "ADMIN"
   news      News[]
   posts     ForumPost[]
+  comments  Comment[]
+  likes     Like[]
   createdAt DateTime    @default(now())
 }
 
@@ -39,9 +41,31 @@ model ForumPost {
   createdAt DateTime @default(now())
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
+  comments  Comment[]
+  likes     Like[]
 }
 
 model ActiveVisitor {
   id        String   @id
   lastPing  DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  authorId  String
+  postId    String
+  author    User     @relation(fields: [authorId], references: [id])
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id])
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
 }

@@ -7,6 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
+        const session = await getServerSession(authOptions);
+
         const posts = await prisma.forumPost.findMany({
             orderBy: {
                 createdAt: "desc",
@@ -18,11 +20,32 @@ export async function GET() {
                         email: true,
                     },
                 },
+                _count: {
+                    select: {
+                        comments: true,
+                        likes: true,
+                    }
+                },
+                likes: session?.user?.id ? {
+                    where: {
+                        userId: session.user.id
+                    },
+                    select: {
+                        userId: true
+                    }
+                } : false
             },
         });
 
-        return NextResponse.json(posts);
+        const formattedPosts = posts.map(post => ({
+            ...post,
+            isLiked: post.likes ? post.likes.length > 0 : false,
+            likes: undefined,
+        }));
+
+        return NextResponse.json(formattedPosts);
     } catch (error) {
+        console.error(error);
         return NextResponse.json(
             { message: "Internal server error" },
             { status: 500 }
