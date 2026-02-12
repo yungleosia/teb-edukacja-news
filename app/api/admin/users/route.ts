@@ -20,6 +20,7 @@ export async function GET() {
                 email: true,
                 role: true,
                 tebCoins: true,
+                lastIp: true,
                 createdAt: true,
             },
             orderBy: {

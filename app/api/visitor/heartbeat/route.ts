@@ -11,6 +11,25 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Missing visitorId" }, { status: 400 });
         }
 
+        // Capture IP
+        const forwarded = req.headers.get("x-forwarded-for");
+        const ip = forwarded ? forwarded.split(/, /)[0] : "127.0.0.1";
+
+        // If user is logged in, update their lastIp
+        // We need authOptions to get session here, but it's an edge route? 
+        // No, it's a standard Node route. 
+        // Dynamic import to avoid circular dep issues if any, though standard import is fine.
+        const { getServerSession } = await import("next-auth");
+        const { authOptions } = await import("../../auth/[...nextauth]/route");
+        const session = await getServerSession(authOptions);
+
+        if (session && session.user?.id) {
+            await prisma.user.update({
+                where: { id: session.user.id },
+                data: { lastIp: ip }
+            });
+        }
+
         // Upsert visitor ping
         await prisma.activeVisitor.upsert({
             where: { id: visitorId },
