@@ -18,6 +18,8 @@ export async function GET() {
                     select: {
                         name: true,
                         email: true,
+                        id: true,
+                        image: true,
                     },
                 },
                 _count: {

@@ -9,8 +9,10 @@ interface Comment {
     content: string
     createdAt: string
     author: {
+        id: string
         name: string | null
         email: string
+        image: string | null
     }
 }
 
@@ -20,8 +22,10 @@ interface ForumPost {
     content: string
     createdAt: string
     author: {
+        id: string
         name: string | null
         email: string
+        image: string | null
     }
     _count: {
         comments: number
@@ -287,10 +291,16 @@ function ForumPostCard({ post: initialPost }: { post: ForumPost }) {
 
             <div className="flex items-center justify-between border-t border-white/5 pt-4">
                 <div className="flex items-center gap-3 text-sm text-gray-500">
-                    <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex items-center justify-center text-[10px] text-white font-bold">
-                        {(post.author.name || post.author.email || "U")[0].toUpperCase()}
-                    </div>
-                    <span>Posted by <span className="text-gray-300">{post.author.name || post.author.email || "Unknown"}</span></span>
+                    <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 hover:text-indigo-400 transition group/author">
+                        <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex items-center justify-center text-[10px] text-white font-bold overflow-hidden ring-1 ring-white/10 group-hover/author:ring-indigo-500 transition">
+                            {post.author.image ? (
+                                <img src={post.author.image} alt={post.author.name || "User"} className="w-full h-full object-cover" />
+                            ) : (
+                                (post.author.name || post.author.email || "U")[0].toUpperCase()
+                            )}
+                        </div>
+                        <span>Posted by <span className="text-gray-300 group-hover/author:text-indigo-400 transition">{post.author.name || post.author.email || "Unknown"}</span></span>
+                    </Link>
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -323,12 +333,20 @@ function ForumPostCard({ post: initialPost }: { post: ForumPost }) {
                         <div className="space-y-4">
                             {comments.map(comment => (
                                 <div key={comment.id} className="flex gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-white/10 flex-shrink-0 flex items-center justify-center text-[10px] text-gray-300">
-                                        {(comment.author.name || comment.author.email || "U")[0].toUpperCase()}
-                                    </div>
+                                    <Link href={`/profile/${comment.author.id}`} className="flex-shrink-0 group/comment-author">
+                                        <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[10px] text-gray-300 overflow-hidden ring-1 ring-white/10 group-hover/comment-author:ring-indigo-500 transition">
+                                            {comment.author.image ? (
+                                                <img src={comment.author.image} alt={comment.author.name || "User"} className="w-full h-full object-cover" />
+                                            ) : (
+                                                (comment.author.name || comment.author.email || "U")[0].toUpperCase()
+                                            )}
+                                        </div>
+                                    </Link>
                                     <div className="bg-white/5 rounded-lg rounded-tl-none p-3 text-sm flex-1">
                                         <div className="flex justify-between items-baseline mb-1">
-                                            <span className="font-semibold text-gray-300 text-xs">{comment.author.name || "Unknown"}</span>
+                                            <Link href={`/profile/${comment.author.id}`} className="font-semibold text-gray-300 text-xs hover:text-indigo-400 transition">
+                                                {comment.author.name || "Unknown"}
+                                            </Link>
                                             <span className="text-[10px] text-gray-600">{new Date(comment.createdAt).toLocaleDateString()}</span>
                                         </div>
                                         <p className="text-gray-400">{comment.content}</p>
