@@ -9,6 +9,33 @@ export function Navbar() {
     const [activeUsers, setActiveUsers] = useState(0)
     const [isScrolled, setIsScrolled] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+    const [userAvatar, setUserAvatar] = useState<string | null>(null)
+
+    // Fetch user avatar
+    useEffect(() => {
+        if (!session) return
+
+        const fetchAvatar = async () => {
+            try {
+                const res = await fetch("/api/user/me")
+                if (res.ok) {
+                    const data = await res.json()
+                    setUserAvatar(data.image)
+                }
+            } catch (error) {
+                console.error("Failed to fetch avatar", error)
+            }
+        }
+
+        fetchAvatar()
+
+        const handleAvatarUpdate = () => {
+            fetchAvatar()
+        }
+
+        window.addEventListener("avatar-updated", handleAvatarUpdate)
+        return () => window.removeEventListener("avatar-updated", handleAvatarUpdate)
+    }, [session])
 
     useEffect(() => {
         const handleScroll = () => {
@@ -18,6 +45,7 @@ export function Navbar() {
         return () => window.removeEventListener("scroll", handleScroll)
     }, [])
 
+    // Heartbeat logic
     useEffect(() => {
         // Generate or get visitor ID
         let visitorId = localStorage.getItem("visitorId")
@@ -83,8 +111,8 @@ export function Navbar() {
                                 <span className="text-sm font-bold text-white leading-none">{session.user?.name}</span>
                             </div>
                             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold ring-2 ring-white/10 shadow-lg shadow-indigo-500/20 group-hover:ring-indigo-500/50 transition overflow-hidden">
-                                {session.user?.image ? (
-                                    <img src={session.user.image} alt={session.user.name || "User"} className="w-full h-full object-cover" />
+                                {userAvatar ? (
+                                    <img src={userAvatar} alt={session.user.name || "User"} className="w-full h-full object-cover" />
                                 ) : (
                                     session.user?.name?.[0] || "U"
                                 )}
@@ -133,8 +161,12 @@ export function Navbar() {
 
                     {session ? (
                         <Link href="/profile" className="flex flex-col items-center gap-4 mt-8 pt-8 border-t border-white/10 w-48 hover:opacity-80 transition" onClick={() => setIsMobileMenuOpen(false)}>
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-lg font-bold">
-                                {session.user?.name?.[0] || "U"}
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-lg font-bold overflow-hidden">
+                                {userAvatar ? (
+                                    <img src={userAvatar} alt={session.user.name || "User"} className="w-full h-full object-cover" />
+                                ) : (
+                                    session.user?.name?.[0] || "U"
+                                )}
                             </div>
                             <span className="text-lg font-bold">{session.user?.name}</span>
                         </Link>

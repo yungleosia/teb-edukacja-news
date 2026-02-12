@@ -14,7 +14,6 @@ interface UserProps {
 
 export function ProfileHeader({ user }: { user: UserProps }) {
     const router = useRouter()
-    const { update } = useSession()
     const [isUploading, setIsUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -51,8 +50,8 @@ export function ProfileHeader({ user }: { user: UserProps }) {
                     throw new Error("Failed to upload")
                 }
 
-                // Update session client-side to reflect change in Navbar
-                await update({ image: base64String })
+                // Disptach event for Navbar to update
+                window.dispatchEvent(new Event("avatar-updated"))
 
                 router.refresh()
             } catch (error) {
