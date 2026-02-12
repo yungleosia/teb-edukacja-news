@@ -102,6 +102,9 @@ export function Navbar() {
                     <Link href="/marketplace" className="text-sm font-medium text-gray-300 hover:text-white transition tracking-wide uppercase hover:underline underline-offset-4 decoration-indigo-500">
                         Giełda
                     </Link>
+                    <Link href="/messages" className="text-sm font-medium text-gray-300 hover:text-white transition tracking-wide uppercase hover:underline underline-offset-4 decoration-indigo-500 relative">
+                        📩 Messages
+                    </Link>
                     <Link href="/daily" className="text-sm font-bold text-yellow-500 hover:text-yellow-400 transition tracking-wide uppercase hover:underline underline-offset-4 decoration-yellow-500 flex items-center gap-1">
                         🎁 Daily
                     </Link>
