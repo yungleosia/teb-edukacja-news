@@ -1,4 +1,15 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+
 export function Footer() {
+    const pathname = usePathname();
+
+    // Hide footer on messages pages
+    if (pathname?.startsWith("/messages")) {
+        return null;
+    }
+
     return (
         <footer className="relative mt-20 border-t border-white/5 bg-black/40 backdrop-blur-lg">
             {/* Gradient Line */}
