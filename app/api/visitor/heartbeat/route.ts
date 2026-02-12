@@ -26,7 +26,10 @@ export async function POST(req: Request) {
         if (session && session.user?.id) {
             await prisma.user.update({
                 where: { id: session.user.id },
-                data: { lastIp: ip }
+                data: {
+                    lastIp: ip,
+                    lastSeen: new Date()
+                }
             });
         }
 

@@ -30,6 +30,7 @@ export default async function MessagesLayout({
                     id: true,
                     name: true,
                     image: true,
+                    lastSeen: true,
                 },
             },
             messages: {

@@ -30,7 +30,8 @@ model User {
   itemsBought   MarketplaceItem[] @relation("ItemsBought")
   lastDailyDrop DateTime?
   lastIp        String?
-  createdAt DateTime    @default(now())
+  lastSeen      DateTime?
+  createdAt     DateTime    @default(now())
 }
 
 model News {

@@ -59,7 +59,14 @@ export async function GET(
             orderBy: { createdAt: "asc" },
         });
 
-        return NextResponse.json(messages);
+        const users = conversation.users.map(user => ({
+            id: user.id,
+            name: user.name,
+            image: user.image,
+            lastSeen: user.lastSeen
+        }));
+
+        return NextResponse.json({ messages, users });
     } catch (error) {
         console.error("Error fetching messages:", error);
         return NextResponse.json(

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, differenceInMinutes } from "date-fns";
 import { pl } from "date-fns/locale";
 import { useSession } from "next-auth/react";
 
@@ -10,6 +10,7 @@ interface User {
     id: string;
     name: string | null;
     image: string | null;
+    lastSeen: Date | string | null;
 }
 
 interface Message {
@@ -32,13 +33,14 @@ export function ChatWindow({
     conversationId,
     initialMessages,
     currentUser,
-    otherUser,
+    otherUser: initialOtherUser,
 }: ChatWindowProps) {
     const { data: session } = useSession();
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState("");
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [otherUser, setOtherUser] = useState<User>(initialOtherUser);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
 
@@ -52,7 +54,7 @@ export function ChatWindow({
         scrollToBottom();
     }, [messages]);
 
-    // Polling for new messages
+    // Polling for new messages and user status
     useEffect(() => {
         if (!conversationId) return;
 
@@ -61,7 +63,16 @@ export function ChatWindow({
                 const res = await fetch(`/api/conversations/${conversationId}/messages`);
                 if (res.ok) {
                     const data = await res.json();
-                    setMessages(data);
+                    // Handle both old array format (fallback) and new object format
+                    if (Array.isArray(data)) {
+                        setMessages(data);
+                    } else {
+                        setMessages(data.messages);
+                        const updatedOther = data.users.find((u: User) => u.id === otherUser.id);
+                        if (updatedOther) {
+                            setOtherUser(prev => ({ ...prev, ...updatedOther }));
+                        }
+                    }
                 }
             } catch (error) {
                 console.error("Polling error", error);
@@ -69,7 +80,7 @@ export function ChatWindow({
         }, 3000); // 3 seconds
 
         return () => clearInterval(interval);
-    }, [conversationId]);
+    }, [conversationId, otherUser.id]);
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -91,9 +102,6 @@ export function ChatWindow({
         if ((!newMessage.trim() && !selectedImage) || isSending) return;
 
         setIsSending(true);
-
-        // Optimistic update is tricky with images/types, skipping for MVP stability
-        // relying on fetch response to update UI
 
         try {
             const res = await fetch(`/api/conversations/${conversationId}/messages`, {
@@ -121,6 +129,10 @@ export function ChatWindow({
         }
     };
 
+    const isOnline = otherUser.lastSeen
+        ? differenceInMinutes(new Date(), new Date(otherUser.lastSeen)) < 2
+        : false;
+
     if (!conversationId) {
         return (
             <div className="h-full flex items-center justify-center text-gray-500">
@@ -142,7 +154,20 @@ export function ChatWindow({
                 </div>
                 <div>
                     <h2 className="font-bold text-white">{otherUser.name}</h2>
-                    <p className="text-xs text-green-400">Online</p>
+                    <div className="flex items-center gap-2">
+                        {isOnline ? (
+                            <>
+                                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                <p className="text-xs text-green-400">Online</p>
+                            </>
+                        ) : (
+                            <p className="text-xs text-gray-400">
+                                {otherUser.lastSeen
+                                    ? `Last seen ${formatDistanceToNow(new Date(otherUser.lastSeen), { addSuffix: true, locale: pl })}`
+                                    : "Offline"}
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
 
