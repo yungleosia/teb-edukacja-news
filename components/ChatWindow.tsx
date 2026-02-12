@@ -35,77 +35,20 @@ export function ChatWindow({
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState("");
     const [sending, setSending] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+        }
     };
 
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
 
-    // Polling for new messages
-    useEffect(() => {
-        const interval = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/conversations/${conversationId}/messages`);
-                if (res.ok) {
-                    const data = await res.json();
-                    // Ideally we should merge or check for dupes, but replacing is okay for MVP if simple
-                    // But replacing might reset scroll position if not careful.
-                    // Let's just setMessages if length is different or last message is different
-                    setMessages(data);
-                }
-            } catch (error) {
-                console.error("Polling error", error);
-            }
-        }, 3000); // 3 seconds
-
-        return () => clearInterval(interval);
-    }, [conversationId]);
-
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim() || sending) return;
-
-        setSending(true);
-        const tempMessage: Message = {
-            id: "temp-" + Date.now(),
-            content: newMessage,
-            createdAt: new Date(),
-            sender: currentUser
-        };
-
-        setMessages([...messages, tempMessage]);
-        setNewMessage("");
-
-        try {
-            const res = await fetch(`/api/conversations/${conversationId}/messages`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: tempMessage.content }),
-            });
-
-            if (res.ok) {
-                const savedMessage = await res.json();
-                setMessages((prev) =>
-                    prev.map((m) => (m.id === tempMessage.id ? savedMessage : m))
-                );
-                router.refresh(); // Refresh server text (sidebar list etc)
-            } else {
-                // Handle error (remove temp message)
-                setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
-                alert("Failed to send message");
-            }
-        } catch (error) {
-            console.error("Send error", error);
-            setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
-        } finally {
-            setSending(false);
-        }
-    };
+    // ...
 
     return (
         <div className="flex flex-col h-full">
@@ -125,7 +68,10 @@ export function ChatWindow({
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
+            >
                 {messages.map((message) => {
                     const isMe = message.sender.id === currentUser.id;
                     return (
@@ -135,8 +81,8 @@ export function ChatWindow({
                         >
                             <div
                                 className={`max-w-[70%] rounded-2xl p-3 ${isMe
-                                        ? "bg-indigo-600 text-white rounded-br-none"
-                                        : "bg-white/10 text-gray-200 rounded-bl-none"
+                                    ? "bg-indigo-600 text-white rounded-br-none"
+                                    : "bg-white/10 text-gray-200 rounded-bl-none"
                                     }`}
                             >
                                 <p>{message.content}</p>
@@ -147,7 +93,6 @@ export function ChatWindow({
                         </div>
                     );
                 })}
-                <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}
@@ -160,8 +105,7 @@ export function ChatWindow({
                     className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
                 />
                 <button
-                    type="button" // Change to submit
-                    onClick={handleSendMessage}
+                    type="submit"
                     disabled={!newMessage.trim() || sending}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition disabled:opacity-50"
                 >
@@ -172,4 +116,5 @@ export function ChatWindow({
             </form>
         </div>
     );
+
 }
