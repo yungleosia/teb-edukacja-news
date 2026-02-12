@@ -80,12 +80,12 @@ export async function POST(
         }
 
         const { conversationId } = await params;
-        const body = await request.json();
-        const { content } = body;
+        const payload = await request.json();
+        const { body, image } = payload;
 
-        if (!content) {
+        if (!body && !image) {
             return NextResponse.json(
-                { error: "Content is required" },
+                { error: "Content or image is required" },
                 { status: 400 }
             );
         }
@@ -121,7 +121,8 @@ export async function POST(
 
         const newMessage = await prisma.message.create({
             data: {
-                content,
+                body,
+                image,
                 conversation: { connect: { id: conversationId } },
                 sender: { connect: { id: currentUser.id } },
             },
