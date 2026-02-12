@@ -8,6 +8,7 @@ interface User {
     name: string
     email: string
     role: "USER" | "ADMIN"
+    tebCoins: number
 }
 
 interface NewsItem {
@@ -182,19 +183,49 @@ export default function AdminDashboard() {
                                 <tbody>
                                     {users.map(user => (
                                         <tr key={user.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                                            <td className="p-3">{user.name}</td>
+                                            <td className="p-3">
+                                                <div className="font-bold">{user.name}</div>
+                                                <div className="text-xs text-yellow-500 font-mono">{user.tebCoins ?? 0} Coins</div>
+                                            </td>
                                             <td className="p-3 font-mono text-sm text-gray-400">{user.email}</td>
                                             <td className="p-3">
                                                 <span className={`px-2 py-1 rounded text-xs font-bold ${user.role === "ADMIN" ? "bg-red-500/20 text-red-400" : "bg-blue-500/20 text-blue-400"}`}>
                                                     {user.role}
                                                 </span>
                                             </td>
-                                            <td className="p-3">
+                                            <td className="p-3 flex gap-2">
                                                 <button
                                                     onClick={() => toggleRole(user.id, user.role)}
-                                                    className="text-sm underline text-gray-400 hover:text-white"
+                                                    className="text-xs border border-white/10 px-2 py-1 rounded hover:bg-white/10 transition"
                                                 >
-                                                    {user.role === "ADMIN" ? "Demote" : "Promote to Admin"}
+                                                    {user.role === "ADMIN" ? "Demote" : "Promote"}
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        const amountStr = prompt(`Ile monet dodać użytkownikowi ${user.name}? (Użyj minusa aby odjąć)`);
+                                                        if (!amountStr) return;
+                                                        const amount = parseInt(amountStr);
+                                                        if (isNaN(amount)) return alert("Nieprawidłowa kwota");
+
+                                                        try {
+                                                            const res = await fetch("/api/admin/coins", {
+                                                                method: "POST",
+                                                                headers: { "Content-Type": "application/json" },
+                                                                body: JSON.stringify({ userId: user.id, amount })
+                                                            });
+                                                            if (res.ok) {
+                                                                fetchUsers();
+                                                                alert(`Pomyślnie dodano ${amount} monet.`);
+                                                            } else {
+                                                                alert("Błąd podczas dodawania monet.");
+                                                            }
+                                                        } catch (e) {
+                                                            alert("Błąd połączenia.");
+                                                        }
+                                                    }}
+                                                    className="text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 px-2 py-1 rounded hover:bg-yellow-500/30 transition"
+                                                >
+                                                    Add Coins
                                                 </button>
                                             </td>
                                         </tr>
