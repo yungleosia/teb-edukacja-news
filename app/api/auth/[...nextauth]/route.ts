@@ -37,15 +37,17 @@ export const authOptions = {
                     email: user.email,
                     name: user.name,
                     role: user.role,
+                    tebCoins: user.tebCoins,
                 }
             }
         })
     ],
     callbacks: {
-        async jwt({ token, user, trigger, session }: { token: any, user: any, trigger?: string, session?: any }) {
+        async jwt({ token, user }: { token: any, user: any }) {
             if (user) {
                 token.id = user.id
                 token.role = user.role
+                token.tebCoins = user.tebCoins
             }
             return token
         },
@@ -53,6 +55,12 @@ export const authOptions = {
             if (session?.user) {
                 session.user.id = token.id
                 session.user.role = token.role
+                // Fetch fresh coin balance from DB to ensure accuracy
+                const freshUser = await prisma.user.findUnique({
+                    where: { id: token.id },
+                    select: { tebCoins: true }
+                });
+                session.user.tebCoins = freshUser?.tebCoins ?? token.tebCoins;
             }
             return session
         }

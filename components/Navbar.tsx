@@ -99,6 +99,9 @@ export function Navbar() {
                     <Link href="/forum" className="text-sm font-medium text-gray-300 hover:text-white transition tracking-wide uppercase hover:underline underline-offset-4 decoration-indigo-500">
                         Forum
                     </Link>
+                    <Link href="/marketplace" className="text-sm font-medium text-gray-300 hover:text-white transition tracking-wide uppercase hover:underline underline-offset-4 decoration-indigo-500">
+                        Giełda
+                    </Link>
                     {session?.user?.role === "ADMIN" && (
                         <Link href="/admin" className="text-sm font-medium text-orange-400 hover:text-orange-300 transition tracking-wide uppercase">
                             Admin
@@ -109,6 +112,10 @@ export function Navbar() {
                             <div className="flex flex-col text-right">
                                 <span className="text-xs text-gray-400 group-hover:text-indigo-400 transition">Welcome,</span>
                                 <span className="text-sm font-bold text-white leading-none">{session.user?.name}</span>
+                                <div className="flex items-center justify-end gap-1 mt-1 text-xs font-medium text-yellow-500">
+                                    <span>{session.user?.tebCoins}</span>
+                                    <span className="text-[10px] uppercase">Coins</span>
+                                </div>
                             </div>
                             <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold ring-2 ring-white/10 shadow-lg shadow-indigo-500/20 group-hover:ring-indigo-500/50 transition overflow-hidden">
                                 {userAvatar ? (
@@ -151,6 +158,10 @@ export function Navbar() {
 
                     <Link href="/forum" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-gray-300 hover:text-white">
                         Forum
+                    </Link>
+
+                    <Link href="/marketplace" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-medium text-gray-300 hover:text-white">
+                        Giełda
                     </Link>
 
                     {session?.user?.role === "ADMIN" && (

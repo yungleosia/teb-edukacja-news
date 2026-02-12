@@ -8,11 +8,13 @@ declare module "next-auth" {
         user: {
             /** The user's role. */
             role: string
+            tebCoins: number
         } & DefaultSession["user"]
     }
 
     interface User {
         role: string
+        tebCoins: number
     }
 }
 
@@ -22,5 +24,6 @@ declare module "next-auth/jwt" {
     /** Returned by the `jwt` callback and `getToken`, when using JWT sessions */
     interface JWT {
         role: string
+        tebCoins: number
     }
 }

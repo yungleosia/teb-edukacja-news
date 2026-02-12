@@ -25,6 +25,9 @@ model User {
   likes     Like[]
   conversations Conversation[]
   messages      Message[]
+  tebCoins      Int         @default(100)
+  itemsSold     MarketplaceItem[] @relation("ItemsSold")
+  itemsBought   MarketplaceItem[] @relation("ItemsBought")
   createdAt DateTime    @default(now())
 }
 
@@ -89,4 +92,22 @@ model Message {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   senderId       String
   sender         User         @relation(fields: [senderId], references: [id])
+}
+
+model MarketplaceItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  price       Int
+  category    String   // e.g., "Books", "Electronics", "Tutoring", "Other"
+  imageUrl    String?
+  status      String   @default("AVAILABLE") // "AVAILABLE", "SOLD"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  sellerId    String
+  seller      User     @relation("ItemsSold", fields: [sellerId], references: [id])
+  
+  buyerId     String?
+  buyer       User?    @relation("ItemsBought", fields: [buyerId], references: [id])
 }
