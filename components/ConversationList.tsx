@@ -15,7 +15,8 @@ interface Conversation {
         image: string | null;
     }[];
     messages: {
-        content: string;
+        body: string | null;
+        image: string | null;
         createdAt: Date;
     }[];
 }
@@ -72,7 +73,7 @@ export function ConversationList({ conversations, currentUserId }: ConversationL
                                         )}
                                     </div>
                                     <p className="text-xs text-gray-500 truncate">
-                                        {lastMessage ? lastMessage.content : "Start a conversation"}
+                                        {lastMessage ? (lastMessage.body || (lastMessage.image ? "📷 Sent an image" : "")) : "Start a conversation"}
                                     </p>
                                 </div>
                             </Link>
