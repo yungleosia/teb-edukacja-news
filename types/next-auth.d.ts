@@ -9,6 +9,7 @@ declare module "next-auth" {
             /** The user's role. */
             role: string
             tebCoins: number
+            id: string
         } & DefaultSession["user"]
     }
 
