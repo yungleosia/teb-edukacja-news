@@ -82,8 +82,12 @@ export function Navbar() {
                                 <span className="text-xs text-gray-400 group-hover:text-indigo-400 transition">Welcome,</span>
                                 <span className="text-sm font-bold text-white leading-none">{session.user?.name}</span>
                             </div>
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold ring-2 ring-white/10 shadow-lg shadow-indigo-500/20 group-hover:ring-indigo-500/50 transition">
-                                {session.user?.name?.[0] || "U"}
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold ring-2 ring-white/10 shadow-lg shadow-indigo-500/20 group-hover:ring-indigo-500/50 transition overflow-hidden">
+                                {session.user?.image ? (
+                                    <img src={session.user.image} alt={session.user.name || "User"} className="w-full h-full object-cover" />
+                                ) : (
+                                    session.user?.name?.[0] || "U"
+                                )}
                             </div>
                         </Link>
                     ) : (

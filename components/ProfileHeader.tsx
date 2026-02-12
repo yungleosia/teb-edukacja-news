@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 interface UserProps {
     name: string | null
@@ -13,6 +14,7 @@ interface UserProps {
 
 export function ProfileHeader({ user }: { user: UserProps }) {
     const router = useRouter()
+    const { update } = useSession()
     const [isUploading, setIsUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -48,6 +50,9 @@ export function ProfileHeader({ user }: { user: UserProps }) {
                 if (!res.ok) {
                     throw new Error("Failed to upload")
                 }
+
+                // Update session client-side to reflect change in Navbar
+                await update({ image: base64String })
 
                 router.refresh()
             } catch (error) {
