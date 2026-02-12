@@ -48,7 +48,62 @@ export function ChatWindow({
         scrollToBottom();
     }, [messages]);
 
-    // ...
+    // Polling for new messages
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/conversations/${conversationId}/messages`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setMessages(data);
+                }
+            } catch (error) {
+                console.error("Polling error", error);
+            }
+        }, 3000); // 3 seconds
+
+        return () => clearInterval(interval);
+    }, [conversationId]);
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newMessage.trim() || sending) return;
+
+        setSending(true);
+        const tempMessage: Message = {
+            id: "temp-" + Date.now(),
+            content: newMessage,
+            createdAt: new Date(),
+            sender: currentUser
+        };
+
+        setMessages([...messages, tempMessage]);
+        setNewMessage("");
+
+        try {
+            const res = await fetch(`/api/conversations/${conversationId}/messages`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: tempMessage.content }),
+            });
+
+            if (res.ok) {
+                const savedMessage = await res.json();
+                setMessages((prev) =>
+                    prev.map((m) => (m.id === tempMessage.id ? savedMessage : m))
+                );
+                router.refresh();
+            } else {
+                setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
+                alert("Failed to send message");
+            }
+        } catch (error) {
+            console.error("Send error", error);
+            setMessages((prev) => prev.filter((m) => m.id !== tempMessage.id));
+        } finally {
+            setSending(false);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full">
