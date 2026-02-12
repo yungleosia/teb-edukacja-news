@@ -13,35 +13,23 @@
   --color-accent-secondary: #a855f7;
 }
 
+/* Thunderstorm Background Color Base */
 body {
+  background-color: #0f172a;
+  background-image:
+    radial-gradient(circle at 50% 0%, #1e1b4b 0%, transparent 60%),
+    radial-gradient(circle at 0% 0%, #312e81 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, #4c1d95 0%, transparent 50%);
   color: var(--foreground);
-  background: var(--background);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
   position: relative;
+  min-height: 100vh;
 }
 
-/* Premium Mesh Gradient Background */
+/* Remove :before pseudo-element for background as Thunderstorm component handles dynamic effects */
 body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background:
-    radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
-    radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
-  background-size: 200% 200%;
-  filter: blur(100px);
-  z-index: -1;
-  opacity: 0.6;
-}
-
-/* Fallback background color */
-body {
-  background-color: #0f172a;
-  /* Slate 900 */
+  display: none;
 }
 
 @utility glass-panel {

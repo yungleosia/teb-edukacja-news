@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { Navbar } from "@/components/Navbar";
-
+import { Thunderstorm } from "@/components/Thunderstorm";
 import { Footer } from "@/components/Footer";
 
 const geistSans = Geist({
@@ -28,7 +28,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} flex flex-col min-h-screen`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} flex flex-col min-h-screen relative`}>
+        <Thunderstorm />
         <Providers>
           <Navbar />
           <main className="flex-grow">
