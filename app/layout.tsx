@@ -5,6 +5,7 @@ import { Providers } from "@/components/Providers";
 import { Navbar } from "@/components/Navbar";
 import { Thunderstorm } from "@/components/Thunderstorm";
 import { Footer } from "@/components/Footer";
+import { Heartbeat } from "@/components/Heartbeat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} flex flex-col min-h-screen relative`}>
         <Thunderstorm />
+        <Heartbeat />
         <Providers>
           <Navbar />
           <main className="flex-grow">
