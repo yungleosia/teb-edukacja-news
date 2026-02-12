@@ -26,6 +26,7 @@ export default async function ConversationPage({
                     id: true,
                     name: true,
                     image: true,
+                    lastSeen: true,
                 },
             },
             messages: {
@@ -38,6 +39,7 @@ export default async function ConversationPage({
                             id: true,
                             name: true,
                             image: true,
+                            lastSeen: true,
                         },
                     },
                 },
