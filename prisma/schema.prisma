@@ -57,7 +57,7 @@ model ForumPost {
 
 model ForumAttachment {
   id        String   @id @default(cuid())
-  url       String
+  data      Bytes
   name      String
   type      String
   size      Int

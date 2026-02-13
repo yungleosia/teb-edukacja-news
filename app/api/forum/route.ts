@@ -36,7 +36,14 @@ export async function GET() {
                         userId: true
                     }
                 } : false,
-                attachments: true
+                attachments: {
+                    select: {
+                        id: true,
+                        name: true,
+                        type: true,
+                        size: true
+                    }
+                }
             },
         });
 
@@ -83,7 +90,7 @@ export async function POST(req: Request) {
                 authorId: session.user.id,
                 attachments: {
                     create: attachments?.map((att: any) => ({
-                        url: att.url,
+                        data: Buffer.from(att.data, 'base64'),
                         name: att.name,
                         type: att.type,
                         size: att.size
@@ -91,12 +98,20 @@ export async function POST(req: Request) {
                 }
             },
             include: {
-                attachments: true
+                attachments: {
+                    select: {
+                        id: true,
+                        name: true,
+                        type: true,
+                        size: true
+                    }
+                }
             }
         });
 
         return NextResponse.json(post, { status: 201 });
     } catch (error) {
+        console.error(error);
         return NextResponse.json(
             { message: "Internal server error" },
             { status: 500 }

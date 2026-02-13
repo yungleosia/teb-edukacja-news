@@ -16,6 +16,13 @@ interface Comment {
     }
 }
 
+interface Attachment {
+    id: string
+    name: string
+    type: string
+    size: number
+}
+
 interface ForumPost {
     id: string
     title: string
@@ -32,19 +39,14 @@ interface ForumPost {
         likes: number
     }
     isLiked: boolean
-    attachments: {
-        url: string
-        name: string
-        type: string
-        size: number
-    }[]
+    attachments: Attachment[]
 }
 
-interface UploadedFile {
-    url: string
+interface FileData {
     name: string
     type: string
     size: number
+    data: string // Base64
 }
 
 export default function ForumPage() {
@@ -54,7 +56,6 @@ export default function ForumPage() {
     const [content, setContent] = useState("")
     const [message, setMessage] = useState("")
     const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-    const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
     const [isUploading, setIsUploading] = useState(false)
 
     const fetchPosts = async () => {
@@ -85,33 +86,42 @@ export default function ForumPage() {
         setSelectedFiles(prev => prev.filter((_, i) => i !== index))
     }
 
-    const uploadFiles = async (): Promise<UploadedFile[]> => {
+    const convertToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                const result = reader.result as string;
+                // Remove data:image/...;base64, prefix to get raw base64
+                const base64 = result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    const prepareFiles = async (): Promise<FileData[]> => {
         if (selectedFiles.length === 0) return []
 
         setIsUploading(true)
-        const uploaded: UploadedFile[] = []
+        const filesData: FileData[] = []
 
         for (const file of selectedFiles) {
-            const formData = new FormData()
-            formData.append("file", file)
-
             try {
-                const res = await fetch("/api/upload", {
-                    method: "POST",
-                    body: formData
+                const base64 = await convertToBase64(file);
+                filesData.push({
+                    name: file.name,
+                    type: file.type || "application/octet-stream",
+                    size: file.size,
+                    data: base64
                 })
-
-                if (res.ok) {
-                    const data = await res.json()
-                    uploaded.push(data)
-                }
             } catch (e) {
-                console.error("Upload failed for", file.name)
+                console.error("Failed to process file", file.name)
             }
         }
 
         setIsUploading(false)
-        return uploaded
+        return filesData
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -124,7 +134,7 @@ export default function ForumPage() {
         }
 
         try {
-            const uploadedAttachments = await uploadFiles()
+            const attachmentsData = await prepareFiles()
 
             const res = await fetch("/api/forum", {
                 method: "POST",
@@ -134,7 +144,7 @@ export default function ForumPage() {
                 body: JSON.stringify({
                     title,
                     content,
-                    attachments: uploadedAttachments
+                    attachments: attachmentsData
                 }),
             })
 
@@ -143,7 +153,6 @@ export default function ForumPage() {
                 setTitle("")
                 setContent("")
                 setSelectedFiles([])
-                setUploadedFiles([])
                 fetchPosts()
             } else {
                 setMessage("Failed to create post.")
@@ -391,9 +400,10 @@ function ForumPostCard({ post: initialPost }: { post: ForumPost }) {
                     {post.attachments.map((att, i) => (
                         <a
                             key={i}
-                            href={att.url}
+                            href={`/api/file/${att.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
+                            download={att.name}
                             className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 transition group/file"
                         >
                             <div className="w-10 h-10 rounded bg-indigo-500/20 flex items-center justify-center text-indigo-400">
