@@ -52,6 +52,18 @@ model ForumPost {
   author    User     @relation(fields: [authorId], references: [id])
   comments  Comment[]
   likes     Like[]
+  attachments ForumAttachment[]
+}
+
+model ForumAttachment {
+  id        String   @id @default(cuid())
+  url       String
+  name      String
+  type      String
+  size      Int
+  createdAt DateTime @default(now())
+  postId    String
+  post      ForumPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model ActiveVisitor {

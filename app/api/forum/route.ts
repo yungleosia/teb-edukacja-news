@@ -35,11 +35,12 @@ export async function GET() {
                     select: {
                         userId: true
                     }
-                } : false
+                } : false,
+                attachments: true
             },
         });
 
-        const formattedPosts = posts.map(post => ({
+        const formattedPosts = posts.map((post: any) => ({
             ...post,
             isLiked: post.likes ? post.likes.length > 0 : false,
             likes: undefined,
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
             );
         }
 
-        const { title, content } = await req.json();
+        const { title, content, attachments } = await req.json();
 
         if (!title || !content) {
             return NextResponse.json(
@@ -80,7 +81,18 @@ export async function POST(req: Request) {
                 title,
                 content,
                 authorId: session.user.id,
+                attachments: {
+                    create: attachments?.map((att: any) => ({
+                        url: att.url,
+                        name: att.name,
+                        type: att.type,
+                        size: att.size
+                    }))
+                }
             },
+            include: {
+                attachments: true
+            }
         });
 
         return NextResponse.json(post, { status: 201 });

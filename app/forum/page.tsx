@@ -32,6 +32,19 @@ interface ForumPost {
         likes: number
     }
     isLiked: boolean
+    attachments: {
+        url: string
+        name: string
+        type: string
+        size: number
+    }[]
+}
+
+interface UploadedFile {
+    url: string
+    name: string
+    type: string
+    size: number
 }
 
 export default function ForumPage() {
@@ -40,6 +53,9 @@ export default function ForumPage() {
     const [title, setTitle] = useState("")
     const [content, setContent] = useState("")
     const [message, setMessage] = useState("")
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+    const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+    const [isUploading, setIsUploading] = useState(false)
 
     const fetchPosts = async () => {
         try {
@@ -59,6 +75,45 @@ export default function ForumPage() {
         fetchPosts()
     }, [])
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            setSelectedFiles(prev => [...prev, ...Array.from(e.target.files!)])
+        }
+    }
+
+    const removeFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+    }
+
+    const uploadFiles = async (): Promise<UploadedFile[]> => {
+        if (selectedFiles.length === 0) return []
+
+        setIsUploading(true)
+        const uploaded: UploadedFile[] = []
+
+        for (const file of selectedFiles) {
+            const formData = new FormData()
+            formData.append("file", file)
+
+            try {
+                const res = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData
+                })
+
+                if (res.ok) {
+                    const data = await res.json()
+                    uploaded.push(data)
+                }
+            } catch (e) {
+                console.error("Upload failed for", file.name)
+            }
+        }
+
+        setIsUploading(false)
+        return uploaded
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setMessage("")
@@ -69,18 +124,26 @@ export default function ForumPage() {
         }
 
         try {
+            const uploadedAttachments = await uploadFiles()
+
             const res = await fetch("/api/forum", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ title, content }),
+                body: JSON.stringify({
+                    title,
+                    content,
+                    attachments: uploadedAttachments
+                }),
             })
 
             if (res.ok) {
                 setMessage("Post created successfully!")
                 setTitle("")
                 setContent("")
+                setSelectedFiles([])
+                setUploadedFiles([])
                 fetchPosts()
             } else {
                 setMessage("Failed to create post.")
@@ -145,11 +208,45 @@ export default function ForumPage() {
                                         />
                                     </div>
 
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-2">Załączniki</label>
+                                        <div className="flex flex-col gap-2">
+                                            <label className="cursor-pointer bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white hover:bg-white/10 transition flex items-center justify-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                                                <span>Wybierz pliki</span>
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    onChange={handleFileSelect}
+                                                    className="hidden"
+                                                />
+                                            </label>
+
+                                            {selectedFiles.length > 0 && (
+                                                <div className="space-y-2 mt-2">
+                                                    {selectedFiles.map((file, i) => (
+                                                        <div key={i} className="flex items-center justify-between bg-white/5 rounded-lg px-3 py-2 text-sm">
+                                                            <span className="truncate max-w-[200px] text-gray-300">{file.name}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeFile(i)}
+                                                                className="text-red-400 hover:text-red-300"
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
                                     <button
                                         type="submit"
-                                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-3 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-500/20"
+                                        disabled={isUploading}
+                                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-3 rounded-xl transition-all duration-300 shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        Post Topic
+                                        {isUploading ? "Wysyłanie..." : "Opublikuj temat"}
                                     </button>
                                 </form>
                             ) : (
@@ -288,6 +385,28 @@ function ForumPostCard({ post: initialPost }: { post: ForumPost }) {
             </div>
 
             <p className="text-gray-400 leading-relaxed mb-6 whitespace-pre-wrap">{post.content}</p>
+
+            {post.attachments && post.attachments.length > 0 && (
+                <div className="mb-6 grid grid-cols-2 gap-2">
+                    {post.attachments.map((att, i) => (
+                        <a
+                            key={i}
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 transition group/file"
+                        >
+                            <div className="w-10 h-10 rounded bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /></svg>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-200 truncate group-hover/file:text-indigo-400 transition">{att.name}</p>
+                                <p className="text-xs text-gray-500">{Math.round(att.size / 1024)} KB</p>
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            )}
 
             <div className="flex items-center justify-between border-t border-white/5 pt-4">
                 <div className="flex items-center gap-3 text-sm text-gray-500">
