@@ -23,11 +23,17 @@ export async function GET() {
     let timeRemaining = 0;
 
     if (lastDrop) {
-        const diff = now.getTime() - lastDrop.getTime();
-        const hoursDiff = diff / (1000 * 60 * 60);
-        if (hoursDiff < COOLDOWN_HOURS) {
+        const isSameDay = now.getFullYear() === lastDrop.getFullYear() &&
+            now.getMonth() === lastDrop.getMonth() &&
+            now.getDate() === lastDrop.getDate();
+
+        if (isSameDay) {
             canClaim = false;
-            timeRemaining = (COOLDOWN_HOURS * 60 * 60 * 1000) - diff;
+            // Calculate time until next midnight
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+            timeRemaining = tomorrow.getTime() - now.getTime();
         }
     }
 
@@ -49,10 +55,12 @@ export async function POST() {
     const lastDrop = user.lastDailyDrop ? new Date(user.lastDailyDrop) : null;
 
     if (lastDrop) {
-        const diff = now.getTime() - lastDrop.getTime();
-        const hoursDiff = diff / (1000 * 60 * 60);
-        if (hoursDiff < COOLDOWN_HOURS) {
-            return NextResponse.json({ error: "Cooldown active" }, { status: 400 });
+        const isSameDay = now.getFullYear() === lastDrop.getFullYear() &&
+            now.getMonth() === lastDrop.getMonth() &&
+            now.getDate() === lastDrop.getDate();
+
+        if (isSameDay) {
+            return NextResponse.json({ error: "Już odebrano dzisiejszą nagrodę. Wróć jutro!" }, { status: 400 });
         }
     }
 

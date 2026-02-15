@@ -64,6 +64,8 @@ export default function DailyDropPage() {
         return items;
     };
 
+    const [animate, setAnimate] = useState(false);
+
     const handleClaim = async () => {
         if (!canClaim || isSpinning) return;
         setLoading(true);
@@ -80,12 +82,25 @@ export default function DailyDropPage() {
                 setLoading(false);
                 setIsSpinning(true);
 
+                // Trigger animation after a slight delay to ensure render
+                setTimeout(() => {
+                    setAnimate(true);
+                }, 50);
+
                 // Animation timing
                 setTimeout(() => {
+                    setAnimate(false);
                     setIsSpinning(false);
                     setShowRewardModal(true);
-                    setTimeRemaining(24 * 60 * 60 * 1000);
-                }, 6000); // 6 seconds spin (5s animation + 1s buffer)
+
+                    // Recalculate time until midnight
+                    const now = new Date();
+                    const tomorrow = new Date(now);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    tomorrow.setHours(0, 0, 0, 0);
+                    setTimeRemaining(tomorrow.getTime() - now.getTime());
+
+                }, 6000); // 6 seconds spin
             } else {
                 alert(data.error);
                 setLoading(false);
@@ -112,8 +127,8 @@ export default function DailyDropPage() {
                         {/* Spinner Tape */}
                         <div className="flex items-center h-full absolute left-1/2"
                             style={{
-                                transform: `translateX(-${(40 * 128) + 64}px)`, // 40 items * 128px width + half item offest
-                                transition: "transform 5s cubic-bezier(0.1, 0, 0.2, 1)"
+                                transform: animate ? `translateX(-${(40 * 128) + 64}px)` : `translateX(0px)`, // Start at 0, move to target
+                                transition: animate ? "transform 5s cubic-bezier(0.1, 0, 0.2, 1)" : "none"
                             }}>
                             {spinResult.map((item, index) => (
                                 <div key={index} className="w-32 flex-shrink-0 p-2 flex flex-col items-center justify-center">
