@@ -2,15 +2,16 @@
 import { MarketplaceItemCard } from "@/components/MarketplaceItemCard";
 import Link from "next/link";
 
-async function getItems() {
-    // We need to fetch absolute URL if server-side, but usually relative works in fetching from client or use Prisma directly
-    // Since this is a server component, we can use Prisma directly to save an API call overhead!
-    // But for consistency with architecture let's stick to defined API or Prisma usage.
-    // Using Prisma directly is better in Server Components.
-
+async function getItems(category?: string) {
     const { prisma } = await import("@/lib/prisma");
+
+    const where: any = { status: "AVAILABLE" };
+    if (category && category !== "Wszystkie") {
+        where.category = category;
+    }
+
     const items = await prisma.marketplaceItem.findMany({
-        where: { status: "AVAILABLE" },
+        where,
         include: {
             seller: {
                 select: { name: true, image: true }
@@ -23,8 +24,11 @@ async function getItems() {
 
 export const dynamic = "force-dynamic";
 
-export default async function MarketplacePage() {
-    const items = await getItems();
+export default async function MarketplacePage({ searchParams }: { searchParams: { category?: string } }) {
+    // Await searchParams before accessing properties
+    const resolvedSearchParams = await searchParams;
+    const category = resolvedSearchParams?.category;
+    const items = await getItems(category);
 
     return (
         <div className="container mx-auto px-6 py-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -51,14 +55,21 @@ export default async function MarketplacePage() {
 
             {/* Filters (Visual Only for MVP) */}
             <div className="flex gap-4 mb-8 overflow-x-auto pb-4 no-scrollbar">
-                {["Wszystkie", "Elektronika", "Inne"].map((cat, i) => (
-                    <button
-                        key={cat}
-                        className={`px-4 py-2 rounded-full text-sm font-medium border transition whitespace-nowrap ${i === 0 ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"}`}
-                    >
-                        {cat}
-                    </button>
-                ))}
+                {["Wszystkie", "Elektronika", "Inne"].map((cat) => {
+                    const isActive = category === cat || (!category && cat === "Wszystkie");
+                    return (
+                        <Link
+                            key={cat}
+                            href={cat === "Wszystkie" ? "/marketplace" : `/marketplace?category=${cat}`}
+                            className={`px-4 py-2 rounded-full text-sm font-medium border transition whitespace-nowrap ${isActive
+                                ? "bg-white text-black border-white"
+                                : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"
+                                }`}
+                        >
+                            {cat}
+                        </Link>
+                    );
+                })}
             </div>
 
             {/* Grid */}
