@@ -127,4 +127,6 @@ model MarketplaceItem {
   
   buyerId     String?
   buyer       User?    @relation("ItemsBought", fields: [buyerId], references: [id])
+  
+  secretContent String? // Content visible only to the buyer (e.g. link, code)
 }

@@ -12,7 +12,8 @@ export default function CreateListingPage() {
         price: "",
         category: "Elektronika",
         description: "",
-        imageUrl: "" // Optional for now
+        imageUrl: "", // Optional for now
+        secretContent: "" // New field
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -106,6 +107,24 @@ export default function CreateListingPage() {
                         className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none"
                         placeholder="Opisz dokładnie co sprzedajesz..."
                     />
+                </div>
+
+                <div className="bg-indigo-500/10 border border-indigo-500/30 p-4 rounded-xl">
+                    <label className="block text-sm font-medium text-indigo-300 mb-2 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                        Ukryta zawartość (Tylko dla kupującego)
+                    </label>
+                    <textarea
+                        name="secretContent"
+                        rows={3}
+                        value={formData.secretContent}
+                        onChange={handleChange}
+                        className="w-full bg-black/40 border border-indigo-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none placeholder-indigo-300/30"
+                        placeholder="Wklej tutaj link do pliku, kod do gry lub inną treść, którą zobaczy tylko osoba, która kupi ten przedmiot."
+                    />
+                    <p className="text-xs text-indigo-400 mt-2">To treść "Premium". Będzie widoczna w ekwipunku kupującego po transakcji.</p>
                 </div>
 
                 <div>

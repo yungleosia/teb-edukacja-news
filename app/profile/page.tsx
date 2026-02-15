@@ -107,12 +107,29 @@ export default async function ProfilePage() {
                                     {item.imageUrl && (
                                         <img src={item.imageUrl} alt={item.title} className="w-full h-32 object-cover rounded-lg mb-2" />
                                     )}
-                                    <h3 className="font-bold text-lg text-white">{item.title}</h3>
-                                    <p className="text-sm text-gray-400 line-clamp-2">{item.description}</p>
-                                    <div className="mt-auto pt-2 flex justify-between items-center text-sm">
-                                        <span className="text-emerald-400 font-bold">{item.price} TebCoins</span>
-                                        <span className="text-gray-500">
-                                            Seller: {item.seller.name || 'Unknown'}
+                                    <div className="flex justify-between items-start mb-2">
+                                        <h3 className="font-bold text-white text-lg">{item.title}</h3>
+                                        <span className="text-yellow-500 font-bold">{item.price} TC</span>
+                                    </div>
+                                    <p className="text-gray-400 text-sm mb-3 text-xs">{item.description}</p>
+
+                                    {item.secretContent && (
+                                        <div className="bg-indigo-500/10 border border-indigo-500/30 p-3 rounded-lg mt-3">
+                                            <div className="text-xs font-bold text-indigo-400 mb-1 flex items-center gap-1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                                                </svg>
+                                                Ukryta Zawartość:
+                                            </div>
+                                            <div className="text-white text-sm font-mono break-all bg-black/30 p-2 rounded">
+                                                {item.secretContent}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-auto pt-2 flex justify-between items-center text-sm border-t border-white/10 mt-4 pt-4">
+                                        <span className="text-gray-500 text-xs">
+                                            Sprzedawca: {item.seller.name || 'Unknown'}
                                         </span>
                                     </div>
                                 </div>

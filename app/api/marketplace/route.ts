@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { title, description, price, category, imageUrl } = body;
+        const { title, description, price, category, imageUrl, secretContent } = body;
 
         if (!title || !description || !price || !category) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -63,6 +63,7 @@ export async function POST(req: Request) {
                 category,
                 imageUrl,
                 sellerId: session.user.id,
+                secretContent: secretContent ? censorText(secretContent) : null,
             },
         });
 
