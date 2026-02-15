@@ -10,7 +10,7 @@ export default function CreateListingPage() {
     const [formData, setFormData] = useState({
         title: "",
         price: "",
-        category: "Książki",
+        category: "Elektronika",
         description: "",
         imageUrl: "" // Optional for now
     });
@@ -89,10 +89,7 @@ export default function CreateListingPage() {
                             onChange={handleChange}
                             className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition appearance-none"
                         >
-                            <option value="Książki">Książki</option>
                             <option value="Elektronika">Elektronika</option>
-                            <option value="Korepetycje">Korepetycje</option>
-                            <option value="Notatki">Notatki</option>
                             <option value="Inne">Inne</option>
                         </select>
                     </div>

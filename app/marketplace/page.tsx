@@ -51,7 +51,7 @@ export default async function MarketplacePage() {
 
             {/* Filters (Visual Only for MVP) */}
             <div className="flex gap-4 mb-8 overflow-x-auto pb-4 no-scrollbar">
-                {["Wszystkie", "Książki", "Elektronika", "Korepetycje", "Inne"].map((cat, i) => (
+                {["Wszystkie", "Elektronika", "Inne"].map((cat, i) => (
                     <button
                         key={cat}
                         className={`px-4 py-2 rounded-full text-sm font-medium border transition whitespace-nowrap ${i === 0 ? "bg-white text-black border-white" : "bg-white/5 border-white/10 text-gray-300 hover:bg-white/10"}`}
