@@ -63,6 +63,8 @@ export async function GET() {
     }
 }
 
+import { censorText } from "@/lib/censorship";
+
 export async function POST(req: Request) {
     try {
         const session = await getServerSession(authOptions);
@@ -85,8 +87,8 @@ export async function POST(req: Request) {
 
         const post = await prisma.forumPost.create({
             data: {
-                title,
-                content,
+                title: censorText(title),
+                content: censorText(content),
                 authorId: session.user.id,
                 attachments: {
                     create: attachments?.map((att: any) => ({

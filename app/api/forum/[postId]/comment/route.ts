@@ -38,6 +38,8 @@ export async function GET(
     }
 }
 
+import { censorText } from "@/lib/censorship";
+
 export async function POST(
     req: Request,
     { params }: { params: Promise<{ postId: string }> }
@@ -64,7 +66,7 @@ export async function POST(
 
         const comment = await prisma.comment.create({
             data: {
-                content,
+                content: censorText(content),
                 postId: postId,
                 authorId: session.user.id,
             },

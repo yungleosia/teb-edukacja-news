@@ -18,6 +18,13 @@ type UserWithRelations = Prisma.UserGetPayload<{
         posts: {
             take: 5,
             orderBy: { createdAt: 'desc' }
+        },
+        itemsBought: {
+            include: {
+                seller: {
+                    select: { name: true }
+                }
+            }
         }
     }
 }>
@@ -42,6 +49,14 @@ export default async function ProfilePage() {
             posts: {
                 take: 5,
                 orderBy: { createdAt: 'desc' }
+            },
+            itemsBought: {
+                include: {
+                    seller: {
+                        select: { name: true }
+                    }
+                },
+                orderBy: { updatedAt: 'desc' }
             }
         }
     })
@@ -76,6 +91,36 @@ export default async function ProfilePage() {
                         </span>
                         <span className="text-gray-400 text-sm font-medium uppercase tracking-wider">Likes Given</span>
                     </div>
+                </div>
+
+                {/* Inventory Section */}
+                <div className="glass-panel p-8 rounded-3xl">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                        <span className="w-2 h-8 bg-emerald-500 rounded-full inline-block"></span>
+                        Ekwipunek
+                    </h2>
+
+                    {user.itemsBought.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {user.itemsBought.map(item => (
+                                <div key={item.id} className="p-4 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-2">
+                                    {item.imageUrl && (
+                                        <img src={item.imageUrl} alt={item.title} className="w-full h-32 object-cover rounded-lg mb-2" />
+                                    )}
+                                    <h3 className="font-bold text-lg text-white">{item.title}</h3>
+                                    <p className="text-sm text-gray-400 line-clamp-2">{item.description}</p>
+                                    <div className="mt-auto pt-2 flex justify-between items-center text-sm">
+                                        <span className="text-emerald-400 font-bold">{item.price} TebCoins</span>
+                                        <span className="text-gray-500">
+                                            Seller: {item.seller.name || 'Unknown'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 italic text-center py-6">Your inventory is empty.</p>
+                    )}
                 </div>
 
                 {/* Recent Activity */}

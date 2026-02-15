@@ -29,6 +29,8 @@ export async function GET() {
     }
 }
 
+import { censorText } from "@/lib/censorship";
+
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
 
@@ -44,11 +46,20 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
+        const priceInt = parseInt(price);
+        if (isNaN(priceInt) || priceInt < 0) {
+            return NextResponse.json({ error: "Invalid price" }, { status: 400 });
+        }
+
+        if (priceInt > 5000) {
+            return NextResponse.json({ error: "Price cannot exceed 5000 TebCoins" }, { status: 400 });
+        }
+
         const item = await prisma.marketplaceItem.create({
             data: {
-                title,
-                description,
-                price: parseInt(price),
+                title: censorText(title),
+                description: censorText(description),
+                price: priceInt,
                 category,
                 imageUrl,
                 sellerId: session.user.id,
