@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -36,12 +36,17 @@ export default function BlackjackPage() {
         }
     };
 
-    useState(() => {
+    useEffect(() => {
         fetchBalance();
-    });
+    }, []);
 
     const handleDeal = async () => {
-        if (!balance || bet > balance) {
+        if (balance === null) {
+            setMessage("Ładowanie salda...");
+            return;
+        }
+
+        if (bet > balance) {
             setMessage("Brak wystarczających środków!");
             return;
         }
