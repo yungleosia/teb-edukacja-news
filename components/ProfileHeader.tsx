@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import Link from "next/link"
 
 interface UserProps {
     name: string | null
@@ -106,13 +107,17 @@ export function ProfileHeader({ user }: { user: UserProps }) {
                 <p className="text-gray-400 font-mono transition-all duration-300 blur-[3px] hover:blur-none select-all cursor-text">
                     {user.email}
                 </p>
-                <div className="flex gap-2 justify-center md:justify-start mt-2">
+                <div className="flex gap-2 justify-center md:justify-start mt-2 items-center">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${user.role === "ADMIN" ? "bg-red-500/20 text-red-400 border border-red-500/20" : "bg-blue-500/20 text-blue-400 border border-blue-500/20"}`}>
                         {user.role}
                     </span>
                     <span className="px-3 py-1 rounded-full bg-white/5 text-gray-400 text-xs border border-white/5">
                         Member since {new Date(user.createdAt).toLocaleDateString()}
                     </span>
+                    {/* Hidden Games Link */}
+                    <Link href="/games" className="w-6 h-6 flex items-center justify-center rounded-full bg-white/5 hover:bg-purple-500/20 text-gray-400 hover:text-purple-400 transition ml-1 opacity-30 hover:opacity-100" title="Arcade">
+                        🎮
+                    </Link>
                 </div>
             </div>
         </div>
