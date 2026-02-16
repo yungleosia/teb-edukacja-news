@@ -9,7 +9,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { caseId } = await req.json();
+    const { caseId, rounds: reqRounds } = await req.json();
     if (!caseId) return NextResponse.json({ error: "Missing caseId" }, { status: 400 });
 
     try {
@@ -18,15 +18,18 @@ export async function POST(req: Request) {
 
         if (!user || !csCase) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-        if (user.tebCoins < csCase.price) {
+        // Deduct balance and create battle
+        const roundsCount = Number(reqRounds) || 1;
+        const totalCost = csCase.price * roundsCount;
+
+        if (user.tebCoins < totalCost) {
             return NextResponse.json({ error: "Insufficient funds" }, { status: 400 });
         }
 
-        // Deduct balance and create battle
         const battle = await prisma.$transaction(async (tx) => {
             await tx.user.update({
                 where: { id: user.id },
-                data: { tebCoins: { decrement: csCase.price } }
+                data: { tebCoins: { decrement: totalCost } }
             });
 
             return await tx.caseBattle.create({
@@ -34,7 +37,12 @@ export async function POST(req: Request) {
                     caseId: csCase.id,
                     casePrice: csCase.price,
                     creatorId: user.id,
-                    status: "WAITING"
+                    status: "WAITING",
+                    rounds: {
+                        create: Array.from({ length: roundsCount }).map((_, i) => ({
+                            roundNum: i + 1
+                        }))
+                    }
                 }
             });
         });

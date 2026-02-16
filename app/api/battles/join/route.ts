@@ -56,7 +56,12 @@ export async function POST(req: Request) {
         if (battle.status !== "WAITING") return NextResponse.json({ error: "Battle not available" }, { status: 400 });
         if (battle.creatorId === user.id) return NextResponse.json({ error: "Cannot create battle against yourself (yet)" }, { status: 400 }); // Optional restriction
 
-        if (user.tebCoins < battle.casePrice) {
+        // Check rounds count
+        const rounds = await prisma.caseBattleRound.findMany({ where: { battleId: battle.id } });
+        const roundsCount = rounds.length;
+        const totalCost = battle.casePrice * roundsCount;
+
+        if (user.tebCoins < totalCost) {
             return NextResponse.json({ error: "Insufficient funds" }, { status: 400 });
         }
 
@@ -73,51 +78,67 @@ export async function POST(req: Request) {
             // 1. Deduct Joiner Balance
             await tx.user.update({
                 where: { id: user.id },
-                data: { tebCoins: { decrement: battle.casePrice } }
+                data: { tebCoins: { decrement: totalCost } }
             });
 
             // 2. Simulate Rolls
-            const creatorSkin = pickRandomSkin(csCase.skins);
-            const joinerSkin = pickRandomSkin(csCase.skins);
+            const roundResults = [];
+            let creatorTotal = 0;
+            let joinerTotal = 0;
+
+            for (const round of rounds) {
+                const creatorSkin = pickRandomSkin(csCase.skins);
+                const joinerSkin = pickRandomSkin(csCase.skins);
+
+                creatorTotal += creatorSkin.price;
+                joinerTotal += joinerSkin.price;
+
+                roundResults.push({
+                    id: round.id,
+                    creatorSkinId: creatorSkin.id,
+                    joinerSkinId: joinerSkin.id,
+                    creatorSkin, joinerSkin
+                });
+            }
 
             // 3. Determine Winner
             let winnerId = null;
-            if (creatorSkin.price > joinerSkin.price) {
+            if (creatorTotal > joinerTotal) {
                 winnerId = battle.creatorId;
-            } else if (joinerSkin.price > creatorSkin.price) {
+            } else if (joinerTotal > creatorTotal) {
                 winnerId = user.id;
             } else {
-                // Draw - Coin flip? Or both keep? Or creator wins tie?
                 // Coin flip
                 winnerId = Math.random() > 0.5 ? battle.creatorId : user.id;
             }
 
-            // 4. Distribute Rewards (Winner takes BOTH)
-            // Create items for winner
-            await tx.userItem.create({
-                data: { userId: winnerId, skinId: creatorSkin.id, status: "INVENTORY" }
-            });
-            await tx.userItem.create({
-                data: { userId: winnerId, skinId: joinerSkin.id, status: "INVENTORY" }
-            });
+            // 4. Distribute Rewards (Winner takes ALL)
+            for (const r of roundResults) {
+                await tx.userItem.create({ data: { userId: winnerId, skinId: r.creatorSkin.id, status: "INVENTORY" } });
+                await tx.userItem.create({ data: { userId: winnerId, skinId: r.joinerSkin.id, status: "INVENTORY" } });
+            }
 
-            // 5. Update Battle
+            // 5. Update Battle and Rounds
             const updatedBattle = await tx.caseBattle.update({
                 where: { id: battleId },
                 data: {
                     status: "FINISHED",
                     joinerId: user.id,
                     winnerId: winnerId,
-                    rounds: {
-                        create: {
-                            roundNum: 1,
-                            creatorSkinId: creatorSkin.id,
-                            joinerSkinId: joinerSkin.id
-                        }
-                    }
                 },
-                include: { rounds: true } // Return results
+                include: { rounds: true }
             });
+
+            // Update rounds individually
+            for (const r of roundResults) {
+                await tx.caseBattleRound.update({
+                    where: { id: r.id },
+                    data: {
+                        creatorSkinId: r.creatorSkinId,
+                        joinerSkinId: r.joinerSkinId
+                    }
+                });
+            }
 
             return updatedBattle;
         });

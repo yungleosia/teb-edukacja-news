@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { caseId } = await req.json();
+    const { caseId, rounds: reqRounds } = await req.json();
     if (!caseId) return NextResponse.json({ error: "Missing caseId" }, { status: 400 });
 
     try {
@@ -51,13 +51,14 @@ export async function POST(req: Request) {
 
         if (!user || !csCase) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-        if (user.tebCoins < csCase.price) {
+        const roundsCount = Number(reqRounds) || 1;
+        const totalCost = csCase.price * roundsCount;
+
+        if (user.tebCoins < totalCost) {
             return NextResponse.json({ error: "Insufficient funds" }, { status: 400 });
         }
 
         // Ensure Bot User Exists
-        // We can create a dedicated bot user or use a fixed ID if known.
-        // Let's create/find a Bot user.
         let botUser = await prisma.user.findUnique({ where: { email: "bot@teb-news.pl" } });
         if (!botUser) {
             botUser = await prisma.user.create({
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
                     name: "GabeN AI 🤖",
                     password: "bot-password-secure-hash", // Dummy
                     role: "USER",
-                    image: "https://i.imgur.com/8xL1WjC.png" // Gaben or Robot image
+                    image: "https://i.imgur.com/8xL1WjC.png"
                 }
             });
         }
@@ -76,31 +77,48 @@ export async function POST(req: Request) {
             // 1. Deduct User Balance
             await tx.user.update({
                 where: { id: user.id },
-                data: { tebCoins: { decrement: csCase.price } }
+                data: { tebCoins: { decrement: totalCost } }
             });
 
             // 2. Simulate Rolls
-            const userSkin = pickRandomSkin(csCase.skins);
-            const botSkin = pickRandomSkin(csCase.skins);
+            const roundData = [];
+            let creatorTotal = 0;
+            let joinerTotal = 0;
+
+            for (let i = 0; i < roundsCount; i++) {
+                const userSkin = pickRandomSkin(csCase.skins);
+                const botSkin = pickRandomSkin(csCase.skins);
+
+                creatorTotal += userSkin.price;
+                joinerTotal += botSkin.price;
+
+                roundData.push({
+                    roundNum: i + 1,
+                    creatorSkinId: userSkin.id,
+                    joinerSkinId: botSkin.id,
+                    creatorSkin: userSkin, // temp for processing
+                    joinerSkin: botSkin    // temp for processing
+                });
+            }
 
             // 3. Determine Winner
             let winnerId = null;
-            if (userSkin.price > botSkin.price) {
+            if (creatorTotal > joinerTotal) {
                 winnerId = user.id;
-            } else if (botSkin.price > userSkin.price) {
+            } else if (joinerTotal > creatorTotal) {
                 winnerId = botUser!.id;
             } else {
                 // Coin flip
                 winnerId = Math.random() > 0.5 ? user.id : botUser!.id;
             }
 
-            // 4. Distribute Rewards (Winner takes BOTH)
+            // 4. Distribute Rewards (Winner takes ALL from ALL rounds)
             if (winnerId === user.id) {
-                await tx.userItem.create({ data: { userId: user.id, skinId: userSkin.id, status: "INVENTORY" } });
-                await tx.userItem.create({ data: { userId: user.id, skinId: botSkin.id, status: "INVENTORY" } });
+                for (const round of roundData) {
+                    await tx.userItem.create({ data: { userId: user.id, skinId: round.creatorSkin.id, status: "INVENTORY" } });
+                    await tx.userItem.create({ data: { userId: user.id, skinId: round.joinerSkin.id, status: "INVENTORY" } });
+                }
             }
-            // If bot wins, items are lost to the void (or we give them to bot, but bot doesn't need inventory really)
-            // Just don't give them to user.
 
             // 5. Create Battle Record (FINISHED immediately)
             return await tx.caseBattle.create({
@@ -113,11 +131,11 @@ export async function POST(req: Request) {
                     status: "FINISHED",
                     createdAt: new Date(),
                     rounds: {
-                        create: {
-                            roundNum: 1,
-                            creatorSkinId: userSkin.id,
-                            joinerSkinId: botSkin.id
-                        }
+                        create: roundData.map(r => ({
+                            roundNum: r.roundNum,
+                            creatorSkinId: r.creatorSkinId,
+                            joinerSkinId: r.joinerSkinId
+                        }))
                     }
                 }
             });

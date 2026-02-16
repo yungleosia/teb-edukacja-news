@@ -20,6 +20,7 @@ export default function BattlesLobbyPage() {
     const [cases, setCases] = useState<Case[]>([]);
     const [creating, setCreating] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [rounds, setRounds] = useState(1);
 
     useEffect(() => {
         fetchBattles();
@@ -40,7 +41,9 @@ export default function BattlesLobbyPage() {
     };
 
     const handleCreate = async (caseId: string, botMode = false) => {
-        if (!confirm(botMode ? "Zagrać z Botem?" : "Utworzyć bitwę za cenę skrzynki?")) return;
+        const selectedCase = cases.find(c => c.id === caseId);
+        const price = selectedCase ? selectedCase.price * rounds : 0;
+        if (!confirm(botMode ? `Zagrać z Botem (${rounds} rund) za ${price} TC?` : `Utworzyć bitwę (${rounds} rund) za ${price} TC?`)) return;
 
         const endpoint = botMode ? "/api/battles/bot" : "/api/battles/create";
 
@@ -48,7 +51,7 @@ export default function BattlesLobbyPage() {
             const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ caseId })
+                body: JSON.stringify({ caseId, rounds })
             });
             const data = await res.json();
             if (data.battle) {
@@ -183,6 +186,27 @@ export default function BattlesLobbyPage() {
                                         <p className="font-bold">{c.name}</p>
                                         <p className="text-yellow-500 text-sm font-bold">{c.price} TC</p>
                                     </div>
+
+                                    {/* Rounds Selector */}
+                                    <div className="w-full flex items-center justify-center gap-2 mb-2 bg-black/20 rounded-lg p-1" onClick={e => e.stopPropagation()}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setRounds(r => Math.max(1, r - 1)); }}
+                                            className="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded text-xs"
+                                        >
+                                            -
+                                        </button>
+                                        <span className="text-xs font-bold w-4 text-center">{rounds}</span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setRounds(r => Math.min(10, r + 1)); }}
+                                            className="w-6 h-6 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded text-xs"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <div className="text-xs text-gray-400 text-center mb-2">
+                                        Razem: <span className="text-yellow-500 font-bold">{c.price * rounds} TC</span>
+                                    </div>
+
                                     <div className="grid grid-cols-2 gap-2 w-full mt-auto">
                                         <button
                                             onClick={() => handleCreate(c.id, false)}
