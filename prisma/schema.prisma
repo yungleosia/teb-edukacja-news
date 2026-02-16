@@ -32,6 +32,13 @@ model User {
   lastDailyDrop DateTime?
   lastIp        String?
   lastSeen      DateTime?
+  
+  // CS2 Relations
+  inventory     UserItem[]
+  battlesCreated CaseBattle[] @relation("BattleCreator")
+  battlesJoined  CaseBattle[] @relation("BattleJoiner")
+  battlesWon     CaseBattle[] @relation("BattleWinner")
+
   createdAt     DateTime    @default(now())
 }
 
@@ -130,4 +137,64 @@ model MarketplaceItem {
   buyer       User?    @relation("ItemsBought", fields: [buyerId], references: [id])
   
   secretContent String? // Content visible only to the buyer (e.g. link, code)
+}
+
+// --- CS2 Case & Battle System ---
+
+model Skin {
+  id        String   @id @default(cuid())
+  name      String
+  image     String   // URL to image
+  rarity    String   // "common", "uncommon", "rare", "mythical", "legendary", "ancient", "contraband"
+  price     Int      // Value in TebCoins
+  cases     Case[]   // Cases containing this skin
+  userItems UserItem[]
+}
+
+model Case {
+  id        String   @id @default(cuid())
+  name      String
+  image     String
+  price     Int      // Cost to open
+  skins     Skin[]   // Possible skins
+}
+
+model UserItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  skinId    String
+  skin      Skin     @relation(fields: [skinId], references: [id])
+  status    String   @default("INVENTORY") // "INVENTORY", "SOLD", "BET_IN_BATTLE"
+  createdAt DateTime @default(now())
+}
+
+model CaseBattle {
+  id        String   @id @default(cuid())
+  status    String   @default("WAITING") // "WAITING", "PLAYING", "FINISHED", "CANCELLED"
+  caseId    String
+  casePrice Int
+  createdAt DateTime @default(now())
+  
+  creatorId String
+  creator   User     @relation("BattleCreator", fields: [creatorId], references: [id])
+  
+  joinerId  String?
+  joiner    User?    @relation("BattleJoiner", fields: [joinerId], references: [id])
+  
+  winnerId  String?
+  winner    User?    @relation("BattleWinner", fields: [winnerId], references: [id])
+  
+  rounds    CaseBattleRound[]
+}
+
+model CaseBattleRound {
+  id        String     @id @default(cuid())
+  battleId  String
+  battle    CaseBattle @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  roundNum  Int
+  
+  // Results
+  creatorSkinId String?
+  joinerSkinId  String?
 }
