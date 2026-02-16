@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
-import { Case, Skin } from "@prisma/client";
+import { Case, Skin, UserItem } from "@prisma/client";
 import { motion, useAnimation } from "framer-motion";
 import Link from "next/link";
 import { ChevronLeft, Coins, Loader2 } from "lucide-react";
@@ -16,16 +16,14 @@ export default function CaseOpeningPage() {
     const [balance, setBalance] = useState<number | null>(null);
     const [opening, setOpening] = useState(false);
     const [wonSkin, setWonSkin] = useState<Skin | null>(null);
+    const [wonItem, setWonItem] = useState<UserItem | null>(null);
     const [rouletteItems, setRouletteItems] = useState<Skin[]>([]);
 
     const controls = useAnimation();
-    const rouletteRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (id) {
             // Fetch ALL cases to find this one (inefficient but simple given API structure)
-            // Ideally we'd have /api/cases/[id]
-            // Let's just fetch all and filter for now.
             fetch("/api/cases").then(res => res.json()).then(data => {
                 const found = data.find((c: CaseWithSkins) => c.id === id);
                 setCsCase(found);
@@ -46,6 +44,7 @@ export default function CaseOpeningPage() {
 
         setOpening(true);
         setWonSkin(null);
+        setWonItem(null);
 
         try {
             const res = await fetch("/api/cases/open", {
@@ -58,6 +57,7 @@ export default function CaseOpeningPage() {
 
             const data = await res.json();
             const winner = data.wonSkin as Skin;
+            const item = data.userItem as UserItem;
 
             // Setup Roulette
             // We need the winner to land at index ~45
@@ -76,9 +76,6 @@ export default function CaseOpeningPage() {
             // Animate
             // Width of card = 192px (w-48) + gap 16px (gap-4) = 208px
             const CARD_WIDTH = 208;
-            // Center position offset = Container Width / 2 - Card Width / 2
-            // Assuming container is full width... tough to calculate exactly without ref.
-            // Let's shift by random offset within the card to prevent line-lining.
 
             const randomOffset = Math.floor(Math.random() * 100) - 50;
             const targetX = -(LANDING_INDEX * CARD_WIDTH) + window.innerWidth / 2 - CARD_WIDTH / 2 + randomOffset;
@@ -94,6 +91,7 @@ export default function CaseOpeningPage() {
             // Show Result Modal
             setTimeout(() => {
                 setWonSkin(winner);
+                setWonItem(item);
                 setBalance(data.newBalance);
                 setOpening(false);
             }, 500);
@@ -101,6 +99,31 @@ export default function CaseOpeningPage() {
         } catch (e) {
             console.error(e);
             setOpening(false);
+        }
+    };
+
+    const handleSell = async () => {
+        if (!wonItem || !wonSkin) return;
+
+        try {
+            const res = await fetch("/api/cases/sell", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ itemId: wonItem.id })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                setBalance(data.newBalance);
+                setWonSkin(null);
+                setWonItem(null);
+                controls.set({ x: 0 }); // Reset roulette
+            } else {
+                alert(data.error);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Błąd sprzedaży");
         }
     };
 
@@ -215,32 +238,34 @@ export default function CaseOpeningPage() {
                             wonSkin.rarity === 'ancient' ? 'text-red-500 border border-red-500/20' : 'text-blue-500 border border-blue-500/20'
                         )}>{wonSkin.rarity}</p>
 
-                        <div className="flex gap-4 w-full z-10">
-                            <button
-                                onClick={async () => {
-                                    // Sell immediately
-                                    // Need UserItem ID? The DB created it.
-                                    // We need to fetch it or return it from open API. 
-                                    // Open API returned userItem.
-                                    // But wait, the modal state variable wonSkin doesn't have the userItemId. 
-                                    // We need to store userItem in state too.
-                                    // For now, let's just close and let them sell in inventory.
-                                    // Or "Keep" and "Sell".
-                                    // Let's just have "OK" button to go back to opening.
-                                    setWonSkin(null);
-                                    controls.set({ x: 0 }); // Reset roulette
-                                }}
-                                className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition"
-                            >
-                                Zachowaj
-                            </button>
+                        <div className="flex gap-4 w-full z-10 flex-col">
+                            <div className="flex gap-4 w-full">
+                                <button
+                                    onClick={() => {
+                                        setWonSkin(null);
+                                        setWonItem(null);
+                                        controls.set({ x: 0 }); // Reset roulette
+                                    }}
+                                    className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition"
+                                >
+                                    Zachowaj
+                                </button>
+                                <button
+                                    onClick={handleSell}
+                                    className="flex-1 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-bold transition flex items-center justify-center gap-2"
+                                >
+                                    <Coins className="w-4 h-4" />
+                                    Sprzedaj ({wonSkin.price} TC)
+                                </button>
+                            </div>
                             <button
                                 onClick={() => {
                                     setWonSkin(null);
+                                    setWonItem(null);
                                     controls.set({ x: 0 });
-                                    handleOpen(); // Re-open instantly? Maybe check balance first.
+                                    handleOpen();
                                 }}
-                                className="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-xl font-bold transition"
+                                className="w-full py-3 bg-yellow-600 hover:bg-yellow-500 rounded-xl font-bold transition"
                             >
                                 Otwórz kolejną
                             </button>
