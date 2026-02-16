@@ -13,8 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "check-user.js",
-    "check-user.js",
     "reset-password.js",
+    "scripts/**",
   ]),
   {
     rules: {

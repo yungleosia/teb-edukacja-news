@@ -59,14 +59,43 @@ export async function POST(req: Request) {
 
         // Generate Reels
         // Add Bonus Symbol 💳
-        const EXTENDED_SYMBOLS = [...SYMBOLS, "💳"];
+        // Weighted Random Generation
+        // Weights:
+        // 💳 (Bonus): 1 (~1.6%)
+        // 💰 (Jackpot): 2 (~3.2%)
+        // 💎 (Gem): 4 (~6.3%)
+        // 🔔 (Bell): 8 (~12.7%)
+        // 🍇 (Grapes): 12 (~19.0%)
+        // 🍋 (Lemon): 16 (~25.4%)
+        // 🍒 (Cherry): 20 (~31.7%)
+        // Total Weight: 63
+
+        const WEIGHTS: Record<string, number> = {
+            "💳": 1,
+            "💰": 2,
+            "💎": 4,
+            "🔔": 8,
+            "🍇": 12,
+            "🍋": 16,
+            "🍒": 20
+        };
+
+        const generateWeightedSymbol = () => {
+            const totalWeight = Object.values(WEIGHTS).reduce((a, b) => a + b, 0);
+            let random = Math.random() * totalWeight;
+
+            for (const symbol of Object.keys(WEIGHTS)) {
+                random -= WEIGHTS[symbol];
+                if (random < 0) return symbol;
+            }
+            return "🍒"; // Fallback
+        };
+
         const reels: string[][] = [];
         for (let i = 0; i < COLS; i++) {
             const col: string[] = [];
             for (let j = 0; j < ROWS; j++) {
-                // Adjust weights? For now equal chance
-                const randomIndex = Math.floor(Math.random() * EXTENDED_SYMBOLS.length);
-                col.push(EXTENDED_SYMBOLS[randomIndex]);
+                col.push(generateWeightedSymbol());
             }
             reels.push(col);
         }
@@ -87,22 +116,9 @@ export async function POST(req: Request) {
         else if (bonusSymbolCount >= 5) freeSpinsWon = 20;
 
         // 2. Calculate Coin Win
-        // User requested rebalancing:
-        // "zmiejsz szanse na wygrywanie ... jak krecisz za 150 to czasem ma ci wypasc 70 albo np 20"
-        // Interpretation: 
-        // - High chance of LOSS (0 win)
-        // - Moderate chance of PARTIAL win (< bet)
-        // - Low chance of PROFIT (> bet)
-
-        // To achieve this deterministically while keeping the "slot" feel, we can:
-        // A. Use the symbols to determine win, but adjust symbol weights so matches are rare.
-        // B. Decide the win outcome FIRST, then rig the reels. (Harder to implement nicely)
-        // C. Use the current symbol logic but tweak the multiplier/values to be very low, so even a match pays little.
-
-        // Let's go with C (Symbol logic) but make it harder.
-        // Current logic: 3 of a kind everywhere pays.
-        // Let's make it: 3 of a kind pays heavily reduced amount (partial win).
-        // 4 or 5 of a kind pays profit.
+        // Adjusted per user request for "very hard" difficulty
+        // Most "wins" should be losses (< bet amount)
+        // Profit only on high tier symbols or 5 matches
 
         const symbolCounts: Record<string, number> = {};
         reels.flat().forEach(s => {
@@ -111,41 +127,81 @@ export async function POST(req: Request) {
             }
         });
 
-        // Adjusted Values for rebalancing
-        // 3 matches = ~10-50% of bet (Partial win)
-        // 4 matches = ~80-150% of bet (Break even / small profit)
-        // 5 matches = Big win
-
         Object.entries(symbolCounts).forEach(([symbol, count]) => {
             // Only pay for 3 or more
             if (count >= 3) {
                 const baseValue = SYMBOL_VALUES[symbol] || 0;
-
-                // Multiplier logic rework
-                // 3 count: very low multiplier (e.g. 0.2)
-                // 4 count: medium multiplier (e.g. 1.0)
-                // 5+ count: high multiplier (e.g. 3.0)
-
                 let multiplier = 0;
-                if (count === 3) multiplier = 0.4; // 3 cherries (2 value) * 0.4 * (bet/10) = very low. 
-                // Example: Bet 100. Base bet unit = 10. 
-                // 3x 💰 (50) -> 50 * 0.4 * 10 = 200 (2x bet). Too high.
 
-                // Let's rethink logic based on "bet" directly.
-                // value * multiplier * (bet / 10 is implied scaling)
+                // New logic:
+                // 3 matches = ~10-20% return (Heavy loss)
+                // 4 matches = ~50-80% return (Loss/Break-even)
+                // 5 matches = ~150-200% return (Profit)
 
-                // Revised Multipliers to force low wins often
-                if (count === 3) multiplier = 0.1; // 3 matches: 10% of value
-                else if (count === 4) multiplier = 0.5;
-                else if (count >= 5) multiplier = 2.0;
+                // The formula below: baseValue * multiplier * (bet / 5)
+                // We need to adjust 'multiplier' to hit the targets above.
+                // Assuming standard "bet unit" is bet/5 (covering 5 'lines' abstractly, though we play scatter pay)
 
-                // Special case for high value symbols?
+                // Example: Bet 50. Unit 10.
+                // 3x 🍒 (Value 2). Target return: ~10 (20% of 50).
+                // 2 * M * 10 = 10 => M = 0.5
+
+                if (count === 3) multiplier = 0.5;
+                else if (count === 4) multiplier = 2.5;
+                else if (count >= 5) multiplier = 8.0;
+
+                // High value symbols get a boost to be actually profitable
                 if (symbol === "💰" || symbol === "💎") {
-                    // increase slightly for rare symbols
                     multiplier *= 1.5;
                 }
 
-                winAmount += baseValue * multiplier * (bet / 5);
+                winAmount += baseValue * multiplier * (bet / 50); // Adjusted divisor to scale properly
+
+                // Re-verification with new divisor 50:
+                // Bet 50.
+                // 3x 🍒 (2). 2 * 0.5 * (50/50) = 1. (Too low. 2% return).
+                // Let's stick to previous divisor 5 but lower multipliers.
+            }
+        });
+
+        // Resetting to use divisor 5 for easier math, adjusting multipliers:
+        // Divisor: (bet / 5)
+        // Bet 100. Unit 20.
+        // 3x 🍒 (2). Target 20 (20% return).
+        // 2 * M * 20 = 20 => M = 0.5.
+
+        // 3x 💰 (50). Target ~100 (Break even).
+        // 50 * M * 20 = 100 => 1000M = 100 => M = 0.1.
+
+        // Okay, the range of Symbol Values (2 to 50) is too wide for a single multiplier set.
+        // We need dynamic multipliers based on symbol tier.
+
+        winAmount = 0; // Reset
+        Object.entries(symbolCounts).forEach(([symbol, count]) => {
+            if (count >= 3) {
+                const val = SYMBOL_VALUES[symbol] || 0;
+
+                let returnPercentage = 0;
+
+                // Target Return Percentages relative to BET
+                if (symbol === "🍒" || symbol === "🍋" || symbol === "🍇") {
+                    // Low Tier
+                    if (count === 3) returnPercentage = 0.1; // 10% back
+                    else if (count === 4) returnPercentage = 0.5; // 50% back
+                    else if (count >= 5) returnPercentage = 1.2; // 20% profit
+                } else if (symbol === "🔔") {
+                    // Mid Tier
+                    if (count === 3) returnPercentage = 0.3;
+                    else if (count === 4) returnPercentage = 0.8;
+                    else if (count >= 5) returnPercentage = 2.0;
+                } else {
+                    // High Tier (💰, 💎)
+                    if (count === 3) returnPercentage = 0.5;
+                    else if (count === 4) returnPercentage = 1.5;
+                    else if (count >= 5) returnPercentage = 5.0; // Big win
+                }
+
+                winAmount += bet * returnPercentage;
             }
         });
 

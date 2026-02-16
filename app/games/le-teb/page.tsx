@@ -216,9 +216,18 @@ export default function LeTebSlotsPage() {
                 <div className="mt-8 flex flex-col md:flex-row items-center justify-between gap-6">
                     <div className="flex items-center gap-4 bg-black/40 p-2 rounded-2xl border border-white/5">
                         <button onClick={() => setBet(Math.max(10, bet - 10))} disabled={spinning} className="w-12 h-12 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-xl transition disabled:opacity-50">-</button>
-                        <div className="text-center w-24">
+                        <div className="text-center w-32 px-2">
                             <div className="text-xs text-gray-400 uppercase font-bold tracking-wider mb-1">Stawka</div>
-                            <div className="text-2xl font-bold text-yellow-500">{bet}</div>
+                            <input
+                                type="number"
+                                value={bet}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    if (!isNaN(val) && val >= 0) setBet(val);
+                                }}
+                                disabled={spinning}
+                                className="w-full bg-transparent text-2xl font-bold text-yellow-500 text-center focus:outline-none focus:ring-2 focus:ring-yellow-500/50 rounded-lg py-1 border-b border-white/10"
+                            />
                         </div>
                         <button onClick={() => setBet(bet + 10)} disabled={spinning} className="w-12 h-12 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center font-bold text-xl transition disabled:opacity-50">+</button>
                     </div>
