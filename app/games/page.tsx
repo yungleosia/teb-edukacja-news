@@ -132,6 +132,46 @@ export default function GamesPage() {
                         </Card3D>
                     </Link>
 
+                    {/* CS2 Cases Card - NEW */}
+                    <Link href="/games/cases">
+                        <Card3D className="group/card w-full h-auto cursor-pointer">
+                            <CardBody className="bg-gradient-to-br from-yellow-900 to-orange-900 relative group/card dark:hover:shadow-2xl dark:hover:shadow-orange-500/[0.1] dark:bg-black w-auto sm:w-[22rem] h-auto rounded-xl p-6 border border-white/10">
+                                <CardItem
+                                    translateZ="50"
+                                    className="text-xl font-bold text-neutral-600 dark:text-white"
+                                >
+                                    CS2 Cases
+                                </CardItem>
+                                <CardItem
+                                    as="p"
+                                    translateZ="60"
+                                    className="text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
+                                >
+                                    Otwieraj skrzynki, zdobywaj rzadkie skiny i walcz z innymi!
+                                </CardItem>
+                                <CardItem translateZ="100" className="w-full mt-4">
+                                    <div className="h-40 w-full rounded-xl group-hover/card:shadow-xl bg-cover bg-center bg-[url('https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naTMfWwTuIq1zNCOw_H3Y7iFwD4I6p102LqYrI7xjAXg-hA4MTr1JNfAJgM8NVrZr1jrk-cvg568u5ycn3Mz7yEm5yrZzR2wg0wVb-Zt06adQ10C/256fx256f')]" />
+                                </CardItem>
+                                <div className="flex justify-between items-center mt-10">
+                                    <CardItem
+                                        translateZ={20}
+                                        as="div"
+                                        className="px-4 py-2 rounded-xl text-xs font-normal dark:text-white"
+                                    >
+                                        HOT 🔥 →
+                                    </CardItem>
+                                    <CardItem
+                                        translateZ={20}
+                                        as="button"
+                                        className="px-4 py-2 rounded-xl bg-white dark:bg-white dark:text-black text-black text-xs font-bold"
+                                    >
+                                        Otwórz
+                                    </CardItem>
+                                </div>
+                            </CardBody>
+                        </Card3D>
+                    </Link>
+
                     {/* Coming Soon Card */}
                     <Card3D className="group/card w-full h-auto opacity-70 grayscale hover:grayscale-0 transition-all duration-500">
                         <CardBody className="bg-gradient-to-br from-slate-800 to-slate-900 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black w-auto sm:w-[22rem] h-auto rounded-xl p-6 border border-white/10">
