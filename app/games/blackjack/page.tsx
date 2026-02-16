@@ -185,18 +185,18 @@ export default function BlackjackPage() {
             </div>
 
             {/* Game Table */}
-            <div className="relative w-full max-w-5xl aspect-[16/9] min-h-[600px] bg-[#1a4731] rounded-[3rem] border-[16px] border-[#2d2116] shadow-2xl flex flex-col items-center justify-between p-8 overflow-hidden z-20">
+            <div className="relative w-full max-w-5xl min-h-[600px] h-auto bg-[#1a4731] rounded-[3rem] border-[16px] border-[#2d2116] shadow-2xl flex flex-col items-center justify-between p-4 md:p-8 overflow-hidden z-20">
 
                 {/* Table Felt Texture & Vignette */}
                 <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/felt.png')] opacity-40 mix-blend-overlay pointer-events-none"></div>
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_rgba(0,0,0,0.6)_100%)] pointer-events-none"></div>
 
                 {/* Dealer Area */}
-                <div className="flex flex-col items-center z-30 w-full mt-8">
-                    <div className="bg-black/20 px-4 py-1 rounded-full mb-4 border border-white/5 backdrop-blur-sm">
+                <div className="flex flex-col items-center z-30 w-full mt-4">
+                    <div className="bg-black/20 px-4 py-1 rounded-full mb-2 border border-white/5 backdrop-blur-sm">
                         <span className="text-emerald-100/70 text-xs font-bold tracking-widest uppercase">Krupier</span>
                     </div>
-                    <div className="flex justify-center -space-x-12 h-[160px] min-w-[120px]">
+                    <div className="flex justify-center -space-x-12 h-[140px] min-w-[120px]">
                         <AnimatePresence>
                             {dealerHand.map((card, i) => (
                                 <PlayingCard
@@ -294,14 +294,6 @@ export default function BlackjackPage() {
                                         </div>
                                         <button onClick={() => setCustomBet((parseInt(customBet) + 10).toString())} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5">+</button>
                                     </div>
-                                    <button
-                                        onClick={handleDeal}
-                                        disabled={loading || balance === null || parseInt(customBet) > (balance ?? 0)}
-                                        className="px-12 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-lg shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                                    >
-                                        {loading ? "Rozdawanie..." : "ROZDAJ"}
-                                    </button>
-
                                     {/* Refill Button if broke */}
                                     {balance !== null && balance < 10 && (
                                         <button
@@ -322,11 +314,19 @@ export default function BlackjackPage() {
                                                     setLoading(false);
                                                 }
                                             }}
-                                            className="mt-2 text-xs text-yellow-500 hover:text-yellow-400 underline"
+                                            className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white shadow-lg transition animate-pulse mb-4"
                                         >
-                                            Bankrut? Odbierz 100 TC
+                                            💰 Odbierz darmowe 100 TC
                                         </button>
                                     )}
+
+                                    <button
+                                        onClick={handleDeal}
+                                        disabled={loading || balance === null || parseInt(customBet) > (balance ?? 0)}
+                                        className="px-12 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-lg shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                    >
+                                        {loading ? "Rozdawanie..." : "ROZDAJ"}
+                                    </button>
                                 </motion.div>
                             ) : gameState === "finished" && !isDealing ? (
                                 <div className="flex flex-col items-center gap-4">
