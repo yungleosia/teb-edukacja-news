@@ -1,0 +1,47 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { prisma } from "@/lib/prisma";
+
+export async function POST(req: Request) {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.email) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { caseId } = await req.json();
+    if (!caseId) return NextResponse.json({ error: "Missing caseId" }, { status: 400 });
+
+    try {
+        const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+        const csCase = await prisma.case.findUnique({ where: { id: caseId } });
+
+        if (!user || !csCase) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+        if (user.tebCoins < csCase.price) {
+            return NextResponse.json({ error: "Insufficient funds" }, { status: 400 });
+        }
+
+        // Deduct balance and create battle
+        const battle = await prisma.$transaction(async (tx) => {
+            await tx.user.update({
+                where: { id: user.id },
+                data: { tebCoins: { decrement: csCase.price } }
+            });
+
+            return await tx.caseBattle.create({
+                data: {
+                    caseId: csCase.id,
+                    casePrice: csCase.price,
+                    creatorId: user.id,
+                    status: "WAITING"
+                }
+            });
+        });
+
+        return NextResponse.json({ battle });
+    } catch (e) {
+        console.error(e);
+        return NextResponse.json({ error: "Internal error" }, { status: 500 });
+    }
+}
