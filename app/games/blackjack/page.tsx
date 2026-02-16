@@ -19,8 +19,15 @@ export default function BlackjackPage() {
     const [gameState, setGameState] = useState<GameState>("betting");
     const [balance, setBalance] = useState<number | null>(null); // Fetched from API
     const [bet, setBet] = useState(10);
+
+    // Server state (the "truth")
+    const [serverPlayerHand, setServerPlayerHand] = useState<Card[]>([]);
+    const [serverDealerHand, setServerDealerHand] = useState<Card[]>([]);
+
+    // Display state (for animation)
     const [playerHand, setPlayerHand] = useState<Card[]>([]);
     const [dealerHand, setDealerHand] = useState<Card[]>([]);
+
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -41,6 +48,25 @@ export default function BlackjackPage() {
         fetchBalance();
     }, []);
 
+    // Effect to handle sequential dealing animation
+    useEffect(() => {
+        // If server lists have more cards than display lists, add them one by one
+        if (serverPlayerHand.length > playerHand.length || serverDealerHand.length > dealerHand.length) {
+            const timeout = setTimeout(() => {
+                // Deal to player first if needed
+                if (serverPlayerHand.length > playerHand.length) {
+                    setPlayerHand([...playerHand, serverPlayerHand[playerHand.length]]);
+                }
+                // Then deal to dealer if needed
+                else if (serverDealerHand.length > dealerHand.length) {
+                    setDealerHand([...dealerHand, serverDealerHand[dealerHand.length]]);
+                }
+            }, 500); // 500ms delay between cards
+            return () => clearTimeout(timeout);
+        }
+    }, [serverPlayerHand, serverDealerHand, playerHand, dealerHand]);
+
+
     const handleDeal = async () => {
         if (balance === null) {
             setMessage("Ładowanie salda...");
@@ -55,6 +81,12 @@ export default function BlackjackPage() {
         setLoading(true);
         setMessage("");
 
+        // Reset hands for new game
+        setPlayerHand([]);
+        setDealerHand([]);
+        setServerPlayerHand([]);
+        setServerDealerHand([]);
+
         try {
             const res = await fetch("/api/games/blackjack/deal", {
                 method: "POST",
@@ -65,8 +97,10 @@ export default function BlackjackPage() {
             const data = await res.json();
 
             if (res.ok) {
-                setPlayerHand(data.playerHand);
-                setDealerHand(data.dealerHand);
+                // Set server state to trigger animation effect
+                setServerPlayerHand(data.playerHand);
+                setServerDealerHand(data.dealerHand);
+
                 setBalance(data.newBalance);
                 setGameState(data.gameState);
                 if (data.message) setMessage(data.message);
@@ -90,8 +124,9 @@ export default function BlackjackPage() {
             const data = await res.json();
 
             if (res.ok) {
-                setPlayerHand(data.playerHand);
-                setDealerHand(data.dealerHand);
+                setServerPlayerHand(data.playerHand);
+                setServerDealerHand(data.dealerHand);
+
                 setGameState(data.gameState);
                 if (data.newBalance !== undefined) setBalance(data.newBalance); // Only updated on finish
                 if (data.message) setMessage(data.message);
@@ -107,15 +142,13 @@ export default function BlackjackPage() {
 
     // Render helper for cards
     const renderCard = (card: Card, index: number) => {
-        // Animation delay based on index for "dealing" effect
-        const animationStyle = {
-            animationDelay: `${index * 150}ms`,
-            animationFillMode: 'both'
-        };
+        // Use custom tailwind animation 'animate-deal-card'
+        // animation-fill-mode: backwards ensures it is invisible before animation starts
+        const animationClass = "animate-deal-card";
 
         if (card.hidden) {
             return (
-                <div key={`hidden-${index}`} style={animationStyle} className="w-24 h-36 bg-indigo-900 rounded-xl border-2 border-indigo-400 flex items-center justify-center shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 relative overflow-hidden animate-in slide-in-from-top-10 fade-in duration-500">
+                <div key={`hidden-${index}`} className={`w-24 h-36 bg-indigo-900 rounded-xl border-2 border-indigo-400 flex items-center justify-center shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 relative overflow-hidden ${animationClass}`}>
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
                     <div className="text-4xl select-none">TEB</div>
                 </div>
@@ -131,7 +164,7 @@ export default function BlackjackPage() {
         }[card.suit];
 
         return (
-            <div key={`${card.value}-${card.suit}-${index}`} style={animationStyle} className={`w-24 h-36 bg-white rounded-xl flex flex-col items-center justify-between p-2 shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 animate-in slide-in-from-top-10 fade-in duration-500 ${isRed ? "text-red-600" : "text-black"}`}>
+            <div key={`${card.value}-${card.suit}-${index}`} className={`w-24 h-36 bg-white rounded-xl flex flex-col items-center justify-between p-2 shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 ${isRed ? "text-red-600" : "text-black"} ${animationClass}`}>
                 <div className="self-start font-bold text-xl select-none">{card.value}</div>
                 <div className="text-4xl select-none">{suitIcon}</div>
                 <div className="self-end font-bold text-xl transform rotate-180 select-none">{card.value}</div>
@@ -141,6 +174,10 @@ export default function BlackjackPage() {
 
     const playerScore = calculateHandValue(playerHand);
     const dealerScore = calculateHandValue(dealerHand);
+    const serverPlayerScore = calculateHandValue(serverPlayerHand); // For comparison to see if we are still dealing
+
+    // Are we currently dealing cards?
+    const isDealing = playerHand.length < serverPlayerHand.length || dealerHand.length < serverDealerHand.length;
 
     return (
         <div className="min-h-screen pt-24 pb-12 px-4 bg-[#0f172a] text-white flex flex-col items-center">
@@ -164,7 +201,7 @@ export default function BlackjackPage() {
                     <div className="text-emerald-400 font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
                         Krupier
                         {dealerHand.length > 0 && (
-                            <span className="bg-black/40 px-2 py-0.5 rounded text-white text-xs border border-white/10">
+                            <span className="bg-black/40 px-2 py-0.5 rounded text-white text-xs border border-white/10 transition-all duration-300">
                                 {dealerHand.some(c => c.hidden) ? "?" : dealerScore}
                             </span>
                         )}
@@ -176,7 +213,7 @@ export default function BlackjackPage() {
 
                 {/* Message Center */}
                 <div className="h-12 flex items-center justify-center z-10 my-4">
-                    {message && (
+                    {message && !isDealing && (
                         <div className="px-6 py-2 bg-black/60 rounded-full border border-white/10 text-white font-bold animate-pulse">
                             {message}
                         </div>
@@ -188,7 +225,7 @@ export default function BlackjackPage() {
                     <div className="text-indigo-400 font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
                         Ty
                         {playerHand.length > 0 && (
-                            <span className="bg-black/40 px-2 py-0.5 rounded text-white text-xs border border-white/10">
+                            <span className="bg-black/40 px-2 py-0.5 rounded text-white text-xs border border-white/10 transition-all duration-300">
                                 {playerScore}
                             </span>
                         )}
@@ -215,7 +252,8 @@ export default function BlackjackPage() {
                         </div>
                     )}
 
-                    {gameState === "playing" && (
+                    {/* Show controls only when playing AND not currently dealing/animating cards */}
+                    {gameState === "playing" && !isDealing && (
                         <div className="flex gap-4 animate-in slide-in-from-bottom-4 fade-in">
                             <button
                                 onClick={() => handleAction("hit")}
@@ -243,12 +281,14 @@ export default function BlackjackPage() {
                         </div>
                     )}
 
-                    {gameState === "finished" && (
+                    {gameState === "finished" && !isDealing && (
                         <button
                             onClick={() => {
                                 setGameState("betting");
                                 setPlayerHand([]);
                                 setDealerHand([]);
+                                setServerPlayerHand([]);
+                                setServerDealerHand([]);
                                 setMessage("");
                             }}
                             className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition animate-bounce"
