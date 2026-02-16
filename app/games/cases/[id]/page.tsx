@@ -74,11 +74,21 @@ export default function CaseOpeningPage() {
             setRouletteItems(newStrip);
 
             // Animate
-            // Width of card = 192px (w-48) + gap 16px (gap-4) = 208px
-            const CARD_WIDTH = 208;
+            // Width of card = 192px (w-48)
+            // Gap = 16px (gap-4)
+            // Total Unit = 208px
+            const CARD_WIDTH_PX = 192;
+            const GAP_PX = 16;
+            const TOTAL_UNIT = CARD_WIDTH_PX + GAP_PX;
 
-            const randomOffset = Math.floor(Math.random() * 100) - 50;
-            const targetX = -(LANDING_INDEX * CARD_WIDTH) + window.innerWidth / 2 - CARD_WIDTH / 2 + randomOffset;
+            // Random offset within the card (so it doesn't always land dead center)
+            // Range: -70 to +70 (card is 192 wide, center is 96. +/- 70 keeps it well within the card)
+            const randomOffset = Math.floor(Math.random() * 140) - 70;
+
+            // We want to move the strip so that the center of the LANDING_INDEX item is at the needle (0 relative to container center)
+            // Initial position: Left edge of Index 0 is at 50% of container (due to px-[50%])
+            // Distance to center of Index 45: (45 * 208) + (192 / 2)
+            const targetX = -((LANDING_INDEX * TOTAL_UNIT) + (CARD_WIDTH_PX / 2)) + randomOffset;
 
             await controls.start({
                 x: targetX,
@@ -151,7 +161,7 @@ export default function CaseOpeningPage() {
                 <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-yellow-500 z-30 shadow-[0_0_20px_rgba(234,179,8,1)]"></div>
 
                 <motion.div
-                    className="flex gap-4 px-[50vw]" // Start with padding to center initial state? No, rely on x
+                    className="flex gap-4 px-[50%]" // Centered relative to container
                     animate={controls}
                     initial={{ x: 0 }}
                 >
