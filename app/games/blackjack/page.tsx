@@ -62,8 +62,16 @@ export default function BlackjackPage() {
         }
     }, [customBet]);
 
-    // Effect to handle sequential dealing animation
+    // Sync server state to display state
     useEffect(() => {
+        // If game is finished, show everything immediately
+        if (gameState === "finished") {
+            setPlayerHand(serverPlayerHand);
+            setDealerHand(serverDealerHand);
+            return;
+        }
+
+        // Animation logic for playing state
         if (serverPlayerHand.length > playerHand.length || serverDealerHand.length > dealerHand.length) {
             const timeout = setTimeout(() => {
                 if (serverPlayerHand.length > playerHand.length) {
@@ -74,7 +82,15 @@ export default function BlackjackPage() {
             }, 400);
             return () => clearTimeout(timeout);
         }
-    }, [serverPlayerHand, serverDealerHand, playerHand, dealerHand]);
+    }, [serverPlayerHand, serverDealerHand, playerHand, dealerHand, gameState]);
+
+    // Auto-stand on 21
+    useEffect(() => {
+        const playerScore = calculateHandValue(playerHand);
+        if (gameState === "playing" && playerScore === 21 && !loading) {
+            handleAction("stand");
+        }
+    }, [playerHand, gameState, loading]);
 
 
     const handleDeal = async () => {
