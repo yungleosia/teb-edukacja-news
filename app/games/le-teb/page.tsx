@@ -47,8 +47,6 @@ export default function LeTebSlotsPage() {
         fetchBalance();
     }, []);
 
-    const controls = useAnimation();
-
     const spin = async () => {
         if (balance === null || balance < bet) return;
         setSpinning(true);
@@ -149,6 +147,7 @@ export default function LeTebSlotsPage() {
                     <AnimatePresence>
                         {winAmount !== null && winAmount > 0 && (
                             <motion.div
+                                key="win-overlay"
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0 }}
