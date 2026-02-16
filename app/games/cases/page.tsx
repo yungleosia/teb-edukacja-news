@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Case, Skin } from "@prisma/client";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ChevronLeft, Coins, Package, Shield } from "lucide-react";
+import { ChevronLeft, Coins, Package, Shield, Swords } from "lucide-react";
 
 type CaseWithSkins = Case & { skins: Skin[] };
 
@@ -27,7 +27,7 @@ export default function CasesPage() {
                 </Link>
                 <div className="flex items-center gap-6">
                     <Link href="/games/cases/inventory" className="text-indigo-400 hover:text-indigo-300 font-medium">
-                        Twoje Ekwipunek
+                        Twój Ekwipunek
                     </Link>
                     <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
                         <Coins className="w-5 h-5 text-yellow-500" />
@@ -35,6 +35,15 @@ export default function CasesPage() {
                             {typeof balance === 'number' ? balance.toLocaleString() : "..."} TC
                         </span>
                     </div>
+
+                    <Link
+                        href="/games/cases/battles"
+                        className="group relative px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl font-bold text-white shadow-lg hover:shadow-purple-500/30 hover:scale-105 transition-all flex items-center gap-2 overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                        <Swords className="w-5 h-5" />
+                        Stwórz Bitwę
+                    </Link>
                 </div>
             </div>
 
