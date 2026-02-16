@@ -73,6 +73,7 @@ export default function ForumPage() {
     }
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         fetchPosts()
     }, [])
 

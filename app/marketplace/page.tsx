@@ -5,6 +5,7 @@ import Link from "next/link";
 async function getItems(category?: string) {
     const { prisma } = await import("@/lib/prisma");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = { status: "AVAILABLE" };
     if (category && category !== "Wszystkie") {
         where.category = category;

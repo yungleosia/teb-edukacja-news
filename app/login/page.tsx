@@ -29,7 +29,7 @@ export default function LoginPage() {
 
             router.push("/")
             router.refresh()
-        } catch (err) {
+        } catch {
             setError("An error occurred")
         }
     }
@@ -82,7 +82,8 @@ export default function LoginPage() {
                 </form>
 
                 <p className="mt-8 text-center text-sm text-gray-500">
-                    Don't have an account? <Link href="/register" className="text-indigo-400 hover:text-indigo-300 transition font-medium">Register here</Link>
+                    {/* eslint-disable-next-line react/no-unescaped-entities */}
+                    Don&apos;t have an account? <Link href="/register" className="text-indigo-400 hover:text-indigo-300 transition font-medium">Register here</Link>
                 </p>
             </div>
         </div>

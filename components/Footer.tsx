@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 export function Footer() {
     const pathname = usePathname();
@@ -30,19 +31,19 @@ export function Footer() {
                     <div>
                         <h3 className="font-bold mb-4 text-white">Nawigacja</h3>
                         <ul className="space-y-2 text-sm text-gray-400">
-                            <li><a href="/" className="hover:text-indigo-400 transition">Strona Główna</a></li>
-                            <li><a href="/forum" className="hover:text-indigo-400 transition">Forum</a></li>
-                            <li><a href="/login" className="hover:text-indigo-400 transition">Logowanie</a></li>
-                            <li><a href="/register" className="hover:text-indigo-400 transition">Rejestracja</a></li>
+                            <li><Link href="/" className="hover:text-indigo-400 transition">Strona Główna</Link></li>
+                            <li><Link href="/forum" className="hover:text-indigo-400 transition">Forum</Link></li>
+                            <li><Link href="/login" className="hover:text-indigo-400 transition">Logowanie</Link></li>
+                            <li><Link href="/register" className="hover:text-indigo-400 transition">Rejestracja</Link></li>
                         </ul>
                     </div>
 
                     <div>
                         <h3 className="font-bold mb-4 text-white">Kontakt</h3>
                         <ul className="space-y-2 text-sm text-gray-400">
-                            <li><a href="#" className="hover:text-indigo-400 transition">Pomoc</a></li>
-                            <li><a href="#" className="hover:text-indigo-400 transition">Regulamin</a></li>
-                            <li><a href="#" className="hover:text-indigo-400 transition">Polityka Prywatności</a></li>
+                            <li><Link href="#" className="hover:text-indigo-400 transition">Pomoc</Link></li>
+                            <li><Link href="#" className="hover:text-indigo-400 transition">Regulamin</Link></li>
+                            <li><Link href="#" className="hover:text-indigo-400 transition">Polityka Prywatności</Link></li>
                         </ul>
                     </div>
                 </div>

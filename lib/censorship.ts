@@ -15,7 +15,7 @@ export function censorText(text: string): string {
         // Add variations if needed, or use a more robust regex for variations
     ];
 
-    let bannedWordsRegex = new RegExp(`\\b(${forbiddenWords.join("|")})\\b`, "gi");
+    const bannedWordsRegex = new RegExp(`\\b(${forbiddenWords.join("|")})\\b`, "gi");
 
     return text.replace(bannedWordsRegex, (match) => {
         if (match.length <= 2) return match; // Too short to mask middle
@@ -26,7 +26,7 @@ export function censorText(text: string): string {
         // "kurwa" -> "k♥♥wa" (length 5 -> 2 hearts)
         // Let's make it proportional but maybe limit max hearts if word is huge?
         // Actually, replacing each middle char with a heart preserves length roughly or just looks nice.
-        const middle = "♥".repeat(match.length - 2); 
+        const middle = "♥".repeat(match.length - 2);
         return `${firstChar}${middle}${lastChar}`;
     });
 }

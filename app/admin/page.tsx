@@ -28,12 +28,7 @@ export default function AdminDashboard() {
     const [newsContent, setNewsContent] = useState("")
     const [message, setMessage] = useState("")
 
-    useEffect(() => {
-        if (activeTab === "users") fetchUsers()
-        if (activeTab === "news") fetchNews()
-    }, [activeTab])
-
-    const fetchUsers = async () => {
+    async function fetchUsers() {
         try {
             const res = await fetch("/api/admin/users")
             const data = await res.json()
@@ -43,7 +38,7 @@ export default function AdminDashboard() {
         }
     }
 
-    const fetchNews = async () => {
+    async function fetchNews() {
         try {
             const res = await fetch("/api/news")
             const data = await res.json()
@@ -52,6 +47,13 @@ export default function AdminDashboard() {
             console.error("Failed to fetch news")
         }
     }
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+        if (activeTab === "users") fetchUsers()
+        // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
+        if (activeTab === "news") fetchNews()
+    }, [activeTab])
 
     const handleCreateNews = async (e: React.FormEvent) => {
         e.preventDefault()

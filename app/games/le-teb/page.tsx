@@ -18,6 +18,7 @@ const SYMBOLS = ["💰", "💎", "🍇", "🍋", "🍒", "🔔"];
 
 export default function LeTebSlotsPage() {
     const [balance, setBalance] = useState<number | null>(null);
+    const [freeSpins, setFreeSpins] = useState<number>(0);
     const [bet, setBet] = useState(10);
     const [spinning, setSpinning] = useState(false);
     const [reels, setReels] = useState<string[][]>([
@@ -25,9 +26,10 @@ export default function LeTebSlotsPage() {
         ["?", "?", "?"],
         ["?", "?", "?"],
         ["?", "?", "?"],
-        ["?", "?", "?"]
+        ["?", "?", "?"],
     ]);
     const [winAmount, setWinAmount] = useState<number | null>(null);
+    const [freeSpinsWon, setFreeSpinsWon] = useState<number | null>(null);
     const [message, setMessage] = useState("");
 
     // Initial fetch of balance
@@ -37,6 +39,7 @@ export default function LeTebSlotsPage() {
             if (res.ok) {
                 const data = await res.json();
                 setBalance(data.tebCoins);
+                setFreeSpins(data.leTebFreeSpins || 0);
             }
         } catch (error) {
             console.error(error);
@@ -48,14 +51,20 @@ export default function LeTebSlotsPage() {
     }, []);
 
     const spin = async () => {
-        if (balance === null || balance < bet) return;
+        if (balance === null) return;
+        if (freeSpins === 0 && balance < bet) return;
+
         setSpinning(true);
         setWinAmount(null);
+        setFreeSpinsWon(null);
         setMessage("");
-        setBalance(balance - bet); // Optimistic update
 
-        // Simulate API call for now (will implement backend next)
-        // await new Promise(resolve => setTimeout(resolve, 2000));
+        // Optimistic update
+        if (freeSpins > 0) {
+            setFreeSpins(prev => prev - 1);
+        } else {
+            setBalance(balance - bet);
+        }
 
         try {
             const res = await fetch("/api/games/le-teb/spin", {
@@ -67,24 +76,30 @@ export default function LeTebSlotsPage() {
             const data = await res.json();
 
             if (res.ok) {
-                // Determine result from API
-                // For animation, we can spin reels
-                setReels(data.reels); // Assuming API returns 5x3 grid
+                setReels(data.reels);
                 setBalance(data.newBalance);
+                setFreeSpins(data.freeSpinsLeft); // Update real count from server
+
                 if (data.winAmount > 0) {
                     setWinAmount(data.winAmount);
                     setMessage(`Wygrałeś ${data.winAmount} TC!`);
                 } else {
                     setMessage("Spróbuj ponownie!");
                 }
+
+                if (data.freeSpinsWon > 0) {
+                    setFreeSpinsWon(data.freeSpinsWon);
+                    setMessage(prev => `${prev} +${data.freeSpinsWon} darmowych spinów!`);
+                }
             } else {
                 setMessage("Błąd gry.");
-                setBalance(balance); // Revert
+                // Revert optimistic updates ideally, but simpler to just refetch
+                fetchBalance();
             }
 
         } catch (e) {
             setMessage("Błąd połączenia.");
-            setBalance(balance);
+            fetchBalance();
         } finally {
             setSpinning(false);
         }
@@ -104,18 +119,31 @@ export default function LeTebSlotsPage() {
                     <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
                     Powrót
                 </Link>
-                <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
-                    <Coins className="w-5 h-5 text-yellow-500" />
-                    <span className="text-gray-400 text-sm font-medium">Saldo:</span>
-                    <span className="text-yellow-500 font-bold text-xl tabular-nums tracking-wide">
-                        {typeof balance === 'number' ? balance.toLocaleString() : "..."} TC
-                    </span>
+                <div className="flex gap-4">
+                    {/* Free Spins Display */}
+                    {freeSpins > 0 && (
+                        <div className="flex items-center gap-3 bg-gradient-to-r from-blue-600/50 to-cyan-600/50 px-4 py-2 rounded-xl border border-blue-400/30 animate-pulse">
+                            <Zap className="w-5 h-5 text-cyan-400" />
+                            <span className="text-cyan-100 text-sm font-medium">Darmowe Spiny:</span>
+                            <span className="text-cyan-400 font-bold text-xl tabular-nums tracking-wide">
+                                {freeSpins}
+                            </span>
+                        </div>
+                    )}
+
+                    <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
+                        <Coins className="w-5 h-5 text-yellow-500" />
+                        <span className="text-gray-400 text-sm font-medium">Saldo:</span>
+                        <span className="text-yellow-500 font-bold text-xl tabular-nums tracking-wide">
+                            {typeof balance === 'number' ? balance.toLocaleString() : "..."} TC
+                        </span>
+                    </div>
                 </div>
             </div>
 
             {/* Slot Machine Display */}
             <div className="relative w-full max-w-4xl bg-gradient-to-b from-slate-800 to-slate-900 rounded-[3rem] p-8 border-8 border-slate-700 shadow-2xl z-20">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 px-8 py-2 rounded-full border-4 border-slate-700 shadow-xl z-30">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 px-8 py-2 rounded-full border-4 border-slate-700 shadow-xl z-30 flex flex-col items-center">
                     <h1 className="text-4xl font-black bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent transform -rotate-2">
                         LE TEB
                     </h1>
@@ -143,7 +171,7 @@ export default function LeTebSlotsPage() {
                         ))}
                     </div>
 
-                    {/* Win Line Overlay (Example) */}
+                    {/* Win Line Overlay */}
                     <AnimatePresence>
                         {winAmount !== null && winAmount > 0 && (
                             <motion.div
@@ -151,7 +179,7 @@ export default function LeTebSlotsPage() {
                                 initial={{ opacity: 0, scale: 0.8 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 rounded-3xl"
+                                className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 rounded-3xl pointer-events-none"
                             >
                                 <div className="text-center">
                                     <div className="text-yellow-400 font-black text-6xl drop-shadow-[0_0_20px_rgba(250,204,21,0.5)] animate-bounce">
@@ -159,6 +187,24 @@ export default function LeTebSlotsPage() {
                                     </div>
                                     <div className="text-white font-bold text-3xl mt-4">
                                         +{winAmount} TC
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                        {freeSpinsWon !== null && freeSpinsWon > 0 && (
+                            <motion.div
+                                key="freespin-overlay"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50 rounded-3xl pointer-events-none"
+                            >
+                                <div className="text-center">
+                                    <div className="text-cyan-400 font-black text-5xl drop-shadow-[0_0_20px_rgba(34,211,238,0.5)] animate-pulse">
+                                        BONUS!
+                                    </div>
+                                    <div className="text-white font-bold text-3xl mt-4">
+                                        +{freeSpinsWon} DARMOWYCH SPINÓW
                                     </div>
                                 </div>
                             </motion.div>
@@ -179,11 +225,16 @@ export default function LeTebSlotsPage() {
 
                     <button
                         onClick={spin}
-                        disabled={spinning || (balance !== null && balance < bet)}
-                        className="flex-1 w-full max-w-sm py-4 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 rounded-2xl font-black text-2xl shadow-[0_0_30px_rgba(234,88,12,0.4)] hover:shadow-[0_0_50px_rgba(234,88,12,0.6)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden"
+                        disabled={spinning || (freeSpins === 0 && balance !== null && balance < bet)}
+                        className={cn(
+                            "flex-1 w-full max-w-sm py-4 rounded-2xl font-black text-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group relative overflow-hidden",
+                            freeSpins > 0
+                                ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 shadow-[0_0_30px_rgba(6,182,212,0.4)]"
+                                : "bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 shadow-[0_0_30px_rgba(234,88,12,0.4)]"
+                        )}
                     >
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none"></div>
-                        {spinning ? "KRECENIE..." : "SPIN"}
+                        {spinning ? "KRECENIE..." : freeSpins > 0 ? `DARMOWY SPIN (${freeSpins})` : "SPIN"}
                     </button>
 
                     <div className="flex items-center gap-2">

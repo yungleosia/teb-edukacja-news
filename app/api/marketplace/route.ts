@@ -51,8 +51,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid price" }, { status: 400 });
         }
 
-        if (priceInt > 5000) {
-            return NextResponse.json({ error: "Price cannot exceed 5000 TebCoins" }, { status: 400 });
+        if (priceInt > 1000000) {
+            return NextResponse.json({ error: "Price cannot exceed 1,000,000 TebCoins" }, { status: 400 });
         }
 
         const item = await prisma.marketplaceItem.create({

@@ -124,7 +124,7 @@ export default function CreateListingPage() {
                         className="w-full bg-black/40 border border-indigo-500/30 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none placeholder-indigo-300/30"
                         placeholder="Wklej tutaj link do pliku, kod do gry lub inną treść, którą zobaczy tylko osoba, która kupi ten przedmiot."
                     />
-                    <p className="text-xs text-indigo-400 mt-2">To treść "Premium". Będzie widoczna w ekwipunku kupującego po transakcji.</p>
+                    <p className="text-xs text-indigo-400 mt-2">To treść &quot;Premium&quot;. Będzie widoczna w ekwipunku kupującego po transakcji.</p>
                 </div>
 
                 <div>

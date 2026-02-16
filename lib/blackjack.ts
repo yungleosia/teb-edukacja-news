@@ -24,7 +24,7 @@ export function createDeck(): Card[] {
     return shuffle(deck);
 }
 
-function shuffle(array: any[]) {
+function shuffle<T>(array: T[]) {
     let currentIndex = array.length, randomIndex;
 
     // While there remain elements to shuffle.
