@@ -150,7 +150,7 @@ export default function GamesPage() {
                                     Otwieraj skrzynki, zdobywaj rzadkie skiny i walcz z innymi!
                                 </CardItem>
                                 <CardItem translateZ="100" className="w-full mt-4">
-                                    <div className="h-40 w-full rounded-xl group-hover/card:shadow-xl bg-cover bg-center bg-[url('https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naTMfWwTuIq1zNCOw_H3Y7iFwD4I6p102LqYrI7xjAXg-hA4MTr1JNfAJgM8NVrZr1jrk-cvg568u5ycn3Mz7yEm5yrZzR2wg0wVb-Zt06adQ10C/256fx256f')]" />
+                                    <div className="h-40 w-full rounded-xl group-hover/card:shadow-xl bg-cover bg-center bg-[url('https://images.unsplash.com/photo-1612287230217-9694656cf66d?q=80&w=2070&auto=format&fit=crop')]" />
                                 </CardItem>
                                 <div className="flex justify-between items-center mt-10">
                                     <CardItem
