@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         }
 
         // Generate Reels
-        // Hardcore Mode Tuning:
+        // Impossible Mode Tuning:
         // Flattened weights for low-tier symbols to increase entropy and reduce "clumping".
         // 💳 (Bonus): 1 
         // 💰 (Money): 2
@@ -115,11 +115,11 @@ export async function POST(req: Request) {
         else if (bonusSymbolCount >= 5) freeSpinsWon = 20;
 
         // 2. Calculate Coin Win
-        // Hardcore Rules:
-        // - Minimum 4 matches to get ANYTHING.
-        // - 4 matches = ~35%-40% of bet (Loss)
-        // - 5 matches = ~60%-80% of bet (Loss)
-        // - 6 matches = ~120% of bet (Small Profit)
+        // Impossible Rules:
+        // - Minimum 5 matches to get ANYTHING. (4 matches = 0)
+        // - 5 matches = ~50% of bet (Loss)
+        // - 6 matches = ~100% of bet (Break even)
+        // - 7 matches = ~200% of bet (Profit)
 
         const symbolCounts: Record<string, number> = {};
         reels.flat().forEach(s => {
@@ -129,25 +129,29 @@ export async function POST(req: Request) {
         });
 
         Object.entries(symbolCounts).forEach(([symbol, count]) => {
-            // Only pay for 4 or more
-            if (count >= 4) {
-                // PREFERRED: Direct percentage calculation based on tier.
-                let returnPercentage = 0;
+            // Only pay for 5 or more (Impossible Mode)
+            // Exception: High tier symbols might pay for 4? No, user wants user to "mostly get nothing".
+            // Let's stick to 5+ for low/mid tier. 
+            // Maybe 4+ for high tier only? User said "mostly nothing". Let's enable 4+ for high tier, 5+ for low.
 
-                if (symbol === "🍒" || symbol === "🍋" || symbol === "🍇" || symbol === "🔔") {
-                    // Standard / Low Tier
-                    if (count === 4) returnPercentage = 0.40; // 40% of bet (Loss)
-                    else if (count === 5) returnPercentage = 0.80; // 80% of bet (Loss)
-                    else if (count === 6) returnPercentage = 1.50; // 50% Profit
-                    else if (count >= 7) returnPercentage = 3.00; // Big Win
-                } else {
-                    // High Tier (💰, 💎)
-                    // Matches of 4+ for these are VERY rare.
-                    if (count === 4) returnPercentage = 1.0; // Break even
-                    else if (count === 5) returnPercentage = 3.0; // Nice win
-                    else if (count >= 6) returnPercentage = 10.0; // Jackpot
-                }
+            let returnPercentage = 0;
 
+            if (symbol === "🍒" || symbol === "🍋" || symbol === "🍇" || symbol === "🔔") {
+                // Low/Mid Tier - Need 5 matches minimum
+                if (count < 5) returnPercentage = 0;
+                else if (count === 5) returnPercentage = 0.50; // 50% of bet (Loss)
+                else if (count === 6) returnPercentage = 1.00; // Break Even
+                else if (count === 7) returnPercentage = 2.00; // Profit x2
+                else if (count >= 8) returnPercentage = 5.00; // Big Win
+            } else {
+                // High Tier (💰, 💎) - Slightly more generous but still hard
+                if (count === 4) returnPercentage = 0.5; // Loss (50%)
+                else if (count === 5) returnPercentage = 1.5; // Profit (x1.5)
+                else if (count >= 6) returnPercentage = 5.0; // Jackpot
+            }
+
+            // If count matches criteria:
+            if (returnPercentage > 0) {
                 winAmount += bet * returnPercentage;
             }
         });
