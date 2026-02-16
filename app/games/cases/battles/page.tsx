@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { Case, CaseBattle, User } from "@prisma/client";
 import { Coins, Plus, Swords, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import SkinImage from "../components/SkinImage";
 
 type BattleWithDetails = CaseBattle & {
     creator: User;
@@ -97,7 +98,7 @@ export default function BattlesLobbyPage() {
                     <div key={battle.id} className="bg-[#1e293b] border border-white/10 rounded-xl p-4 flex items-center justify-between hover:bg-[#253248] transition group">
                         {/* Box Info */}
                         <div className="flex items-center gap-4">
-                            <img src={battle.case.image} className="w-16 h-16 object-contain" />
+                            <SkinImage src={battle.case.image} className="w-16 h-16 object-contain" />
                             <div>
                                 <h3 className="font-bold">{battle.case.name}</h3>
                                 <p className="text-yellow-500 text-sm font-bold flex items-center gap-1">
@@ -176,7 +177,7 @@ export default function BattlesLobbyPage() {
                                     onClick={() => handleCreate(c.id)}
                                     className="bg-[#0f172a] hover:bg-[#253248] border border-white/5 hover:border-yellow-500/50 rounded-xl p-4 flex flex-col items-center gap-3 transition group"
                                 >
-                                    <img src={c.image} className="w-24 h-24 object-contain group-hover:scale-110 transition-transform" />
+                                    <SkinImage src={c.image} className="w-24 h-24 object-contain group-hover:scale-110 transition-transform" />
                                     <div className="text-center">
                                         <p className="font-bold">{c.name}</p>
                                         <p className="text-yellow-500 text-sm font-bold">{c.price} TC</p>

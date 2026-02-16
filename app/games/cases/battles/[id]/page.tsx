@@ -8,6 +8,7 @@ import Link from "next/link";
 import { ChevronLeft, Coins, Loader2, Swords, Trophy, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
+import SkinImage from "../components/SkinImage";
 
 // Types
 type SkinWithDetails = Skin;
@@ -238,7 +239,7 @@ export default function BattleArenaPage() {
                                     <div key={i} className={cn("w-32 h-40 bg-[#1e293b] border rounded-lg flex-shrink-0 flex flex-col items-center justify-center p-2",
                                         skin.rarity === 'ancient' ? 'border-red-500 bg-red-900/10' : 'border-blue-500 bg-blue-900/10'
                                     )}>
-                                        <img src={skin.image} className="w-20 h-20 object-contain" />
+                                        <SkinImage src={skin.image} className="w-20 h-20 object-contain" />
                                         <p className="text-[10px] text-center truncate w-full">{skin.name}</p>
                                         <p className="text-[10px] text-yellow-500 font-bold">{skin.price}</p>
                                     </div>
@@ -255,7 +256,7 @@ export default function BattleArenaPage() {
                     <div className="p-4 bg-black/20 min-h-[100px] flex items-center justify-center">
                         {rouletteState === "DONE" && battle.rounds[0]?.creatorSkin && (
                             <div className="flex items-center gap-4">
-                                <img src={battle.rounds[0].creatorSkin.image} className="w-16 h-16 object-contain" />
+                                <SkinImage src={battle.rounds[0].creatorSkin.image} className="w-16 h-16 object-contain" />
                                 <div className="text-left">
                                     <p className="font-bold text-sm">{battle.rounds[0].creatorSkin.name}</p>
                                     <p className="text-yellow-500 font-bold">{battle.rounds[0].creatorSkin.price} TC</p>
@@ -309,7 +310,7 @@ export default function BattleArenaPage() {
                                             <div key={i} className={cn("w-32 h-40 bg-[#1e293b] border rounded-lg flex-shrink-0 flex flex-col items-center justify-center p-2",
                                                 skin.rarity === 'ancient' ? 'border-red-500 bg-red-900/10' : 'border-blue-500 bg-blue-900/10'
                                             )}>
-                                                <img src={skin.image} className="w-20 h-20 object-contain" />
+                                                <SkinImage src={skin.image} className="w-20 h-20 object-contain" />
                                                 <p className="text-[10px] text-center truncate w-full">{skin.name}</p>
                                                 <p className="text-[10px] text-yellow-500 font-bold">{skin.price}</p>
                                             </div>
@@ -326,7 +327,7 @@ export default function BattleArenaPage() {
                             <div className="p-4 bg-black/20 min-h-[100px] flex items-center justify-center">
                                 {rouletteState === "DONE" && battle.rounds[0]?.joinerSkin && (
                                     <div className="flex items-center gap-4">
-                                        <img src={battle.rounds[0].joinerSkin.image} className="w-16 h-16 object-contain" />
+                                        <SkinImage src={battle.rounds[0].joinerSkin.image} className="w-16 h-16 object-contain" />
                                         <div className="text-left">
                                             <p className="font-bold text-sm">{battle.rounds[0].joinerSkin.name}</p>
                                             <p className="text-yellow-500 font-bold">{battle.rounds[0].joinerSkin.price} TC</p>
