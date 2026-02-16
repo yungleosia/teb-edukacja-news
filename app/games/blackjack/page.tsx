@@ -179,7 +179,7 @@ export default function BlackjackPage() {
                     <Coins className="w-5 h-5 text-yellow-500" />
                     <span className="text-gray-400 text-sm font-medium">Saldo:</span>
                     <span className="text-yellow-500 font-bold text-xl tabular-nums tracking-wide">
-                        {balance !== null ? balance.toLocaleString() : "..."} TC
+                        {typeof balance === 'number' ? balance.toLocaleString() : "..."} TC
                     </span>
                 </div>
             </div>
