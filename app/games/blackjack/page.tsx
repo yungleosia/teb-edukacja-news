@@ -221,6 +221,7 @@ export default function BlackjackPage() {
                     <AnimatePresence mode="wait">
                         {message && (
                             <motion.div
+                                key="message-box"
                                 initial={{ opacity: 0, scale: 0.9, y: 10 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
@@ -232,6 +233,7 @@ export default function BlackjackPage() {
                         {/* Win Overlay */}
                         {winAmount !== null && winAmount > 0 && gameState === 'finished' && (
                             <motion.div
+                                key="win-overlay"
                                 initial={{ scale: 0, rotate: -10 }}
                                 animate={{ scale: 1, rotate: 0 }}
                                 className="absolute inset-0 flex items-center justify-center pointer-events-none"
