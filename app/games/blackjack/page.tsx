@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { calculateHandValue } from "@/lib/blackjack";
+import { motion, AnimatePresence } from "framer-motion";
+import { PlayingCard, CardSuit } from "@/components/ui/playing-card";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, Coins, RotateCcw, Shield, TriangleAlert } from "lucide-react";
 
 type Card = {
-    suit: "hearts" | "diamonds" | "clubs" | "spades";
+    suit: CardSuit;
     value: string;
     numericValue: number;
     hidden?: boolean;
@@ -17,8 +21,9 @@ type GameState = "betting" | "playing" | "dealerTurn" | "finished";
 export default function BlackjackPage() {
     const router = useRouter();
     const [gameState, setGameState] = useState<GameState>("betting");
-    const [balance, setBalance] = useState<number | null>(null); // Fetched from API
+    const [balance, setBalance] = useState<number | null>(null);
     const [bet, setBet] = useState(10);
+    const [customBet, setCustomBet] = useState("10"); // String for input handling
 
     // Server state (the "truth")
     const [serverPlayerHand, setServerPlayerHand] = useState<Card[]>([]);
@@ -30,6 +35,7 @@ export default function BlackjackPage() {
 
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
+    const [winAmount, setWinAmount] = useState<number | null>(null);
 
     // Initial fetch of balance
     const fetchBalance = async () => {
@@ -48,40 +54,48 @@ export default function BlackjackPage() {
         fetchBalance();
     }, []);
 
+    // Sync customBet input with bet state, but allow typing
+    useEffect(() => {
+        const val = parseInt(customBet);
+        if (!isNaN(val)) {
+            setBet(val);
+        }
+    }, [customBet]);
+
     // Effect to handle sequential dealing animation
     useEffect(() => {
-        // If server lists have more cards than display lists, add them one by one
         if (serverPlayerHand.length > playerHand.length || serverDealerHand.length > dealerHand.length) {
             const timeout = setTimeout(() => {
-                // Deal to player first if needed
                 if (serverPlayerHand.length > playerHand.length) {
                     setPlayerHand([...playerHand, serverPlayerHand[playerHand.length]]);
-                }
-                // Then deal to dealer if needed
-                else if (serverDealerHand.length > dealerHand.length) {
+                } else if (serverDealerHand.length > dealerHand.length) {
                     setDealerHand([...dealerHand, serverDealerHand[dealerHand.length]]);
                 }
-            }, 500); // 500ms delay between cards
+            }, 400);
             return () => clearTimeout(timeout);
         }
     }, [serverPlayerHand, serverDealerHand, playerHand, dealerHand]);
 
 
     const handleDeal = async () => {
-        if (balance === null) {
-            setMessage("Ładowanie salda...");
+        if (balance === null) return;
+        const betAmount = parseInt(customBet);
+
+        if (isNaN(betAmount) || betAmount <= 0) {
+            setMessage("Nieprawidłowa stawka!");
             return;
         }
 
-        if (bet > balance) {
+        if (betAmount > balance) {
             setMessage("Brak wystarczających środków!");
             return;
         }
 
         setLoading(true);
         setMessage("");
+        setWinAmount(null);
 
-        // Reset hands for new game
+        // Reset hands
         setPlayerHand([]);
         setDealerHand([]);
         setServerPlayerHand([]);
@@ -91,16 +105,14 @@ export default function BlackjackPage() {
             const res = await fetch("/api/games/blackjack/deal", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ bet }),
+                body: JSON.stringify({ bet: betAmount }),
             });
 
             const data = await res.json();
 
             if (res.ok) {
-                // Set server state to trigger animation effect
                 setServerPlayerHand(data.playerHand);
                 setServerDealerHand(data.dealerHand);
-
                 setBalance(data.newBalance);
                 setGameState(data.gameState);
                 if (data.message) setMessage(data.message);
@@ -126,9 +138,14 @@ export default function BlackjackPage() {
             if (res.ok) {
                 setServerPlayerHand(data.playerHand);
                 setServerDealerHand(data.dealerHand);
-
                 setGameState(data.gameState);
-                if (data.newBalance !== undefined) setBalance(data.newBalance); // Only updated on finish
+
+                if (data.newBalance !== undefined) {
+                    const diff = data.newBalance - (balance || 0);
+                    if (diff > 0) setWinAmount(diff);
+                    setBalance(data.newBalance);
+                }
+
                 if (data.message) setMessage(data.message);
             } else {
                 setMessage(data.error || "Błąd akcji.");
@@ -140,162 +157,205 @@ export default function BlackjackPage() {
         }
     };
 
-    // Render helper for cards
-    const renderCard = (card: Card, index: number) => {
-        // Use custom tailwind animation 'animate-deal-card'
-        // animation-fill-mode: backwards ensures it is invisible before animation starts
-        const animationClass = "animate-deal-card";
-
-        if (card.hidden) {
-            return (
-                <div key={`hidden-${index}`} className={`w-24 h-36 bg-indigo-900 rounded-xl border-2 border-indigo-400 flex items-center justify-center shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 relative overflow-hidden ${animationClass}`}>
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-                    <div className="text-4xl select-none">TEB</div>
-                </div>
-            );
-        }
-
-        const isRed = card.suit === "hearts" || card.suit === "diamonds";
-        const suitIcon = {
-            hearts: "♥",
-            diamonds: "♦",
-            clubs: "♣",
-            spades: "♠"
-        }[card.suit];
-
-        return (
-            <div key={`${card.value}-${card.suit}-${index}`} className={`w-24 h-36 bg-white rounded-xl flex flex-col items-center justify-between p-2 shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 ${isRed ? "text-red-600" : "text-black"} ${animationClass}`}>
-                <div className="self-start font-bold text-xl select-none">{card.value}</div>
-                <div className="text-4xl select-none">{suitIcon}</div>
-                <div className="self-end font-bold text-xl transform rotate-180 select-none">{card.value}</div>
-            </div>
-        );
-    };
-
     const playerScore = calculateHandValue(playerHand);
     const dealerScore = calculateHandValue(dealerHand);
-    const serverPlayerScore = calculateHandValue(serverPlayerHand); // For comparison to see if we are still dealing
 
-    // Are we currently dealing cards?
+    // Dealing state check
     const isDealing = playerHand.length < serverPlayerHand.length || dealerHand.length < serverDealerHand.length;
 
     return (
-        <div className="min-h-screen pt-24 pb-12 px-4 bg-[#0f172a] text-white flex flex-col items-center">
+        <div className="min-h-screen pt-24 pb-12 px-4 bg-[#0f172a] text-white flex flex-col items-center relative overflow-hidden">
+            {/* Background Texture */}
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/felt.png')] opacity-10 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/20 to-[#0f172a] pointer-events-none"></div>
+
             {/* Header */}
-            <div className="w-full max-w-4xl flex justify-between items-center mb-8 bg-white/5 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
-                <Link href="/games" className="text-gray-400 hover:text-white flex items-center gap-2 transition">
-                    ← Powrót
+            <div className="w-full max-w-5xl flex justify-between items-center mb-8 bg-black/40 p-4 rounded-2xl border border-white/5 backdrop-blur-md z-10">
+                <Link href="/games" className="text-gray-400 hover:text-white flex items-center gap-2 transition group">
+                    <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
+                    Powrót
                 </Link>
-                <div className="flex items-center gap-2">
-                    <span className="text-gray-400">Twoje saldo:</span>
-                    <span className="text-yellow-500 font-bold text-xl">{balance !== null ? balance : "..."} TC</span>
+                <div className="flex items-center gap-3 bg-black/40 px-4 py-2 rounded-xl border border-white/5">
+                    <Coins className="w-5 h-5 text-yellow-500" />
+                    <span className="text-gray-400 text-sm font-medium">Saldo:</span>
+                    <span className="text-yellow-500 font-bold text-xl tabular-nums tracking-wide">
+                        {balance !== null ? balance.toLocaleString() : "..."} TC
+                    </span>
                 </div>
             </div>
 
             {/* Game Table */}
-            <div className="relative w-full max-w-4xl min-h-[500px] bg-emerald-900/40 rounded-[3rem] border-8 border-emerald-900 shadow-2xl flex flex-col items-center justify-center p-8 overflow-hidden backdrop-blur-sm">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-800/50 via-transparent to-transparent pointer-events-none"></div>
+            <div className="relative w-full max-w-5xl aspect-[16/9] min-h-[600px] bg-[#1a4731] rounded-[3rem] border-[16px] border-[#2d2116] shadow-2xl flex flex-col items-center justify-between p-8 overflow-hidden z-20">
+
+                {/* Table Felt Texture & Vignette */}
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/felt.png')] opacity-40 mix-blend-overlay pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_transparent_0%,_rgba(0,0,0,0.6)_100%)] pointer-events-none"></div>
 
                 {/* Dealer Area */}
-                <div className="mb-12 flex flex-col items-center z-10 w-full">
-                    <div className="text-emerald-400 font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
-                        Krupier
-                        {dealerHand.length > 0 && (
-                            <span className="bg-black/40 px-2 py-0.5 rounded text-white text-xs border border-white/10 transition-all duration-300">
-                                {dealerHand.some(c => c.hidden) ? "?" : dealerScore}
-                            </span>
-                        )}
+                <div className="flex flex-col items-center z-30 w-full mt-8">
+                    <div className="bg-black/20 px-4 py-1 rounded-full mb-4 border border-white/5 backdrop-blur-sm">
+                        <span className="text-emerald-100/70 text-xs font-bold tracking-widest uppercase">Krupier</span>
                     </div>
-                    <div className="flex justify-center pl-[40px] min-h-[144px]">
-                        {dealerHand.map((card, i) => renderCard(card, i))}
+                    <div className="flex justify-center -space-x-12 h-[160px] min-w-[120px]">
+                        <AnimatePresence>
+                            {dealerHand.map((card, i) => (
+                                <PlayingCard
+                                    key={`${i}-${card.suit}-${card.value}`}
+                                    index={i}
+                                    suit={card.suit}
+                                    value={card.value}
+                                    hidden={card.hidden}
+                                />
+                            ))}
+                        </AnimatePresence>
                     </div>
-                </div>
-
-                {/* Message Center */}
-                <div className="h-12 flex items-center justify-center z-10 my-4">
-                    {message && !isDealing && (
-                        <div className="px-6 py-2 bg-black/60 rounded-full border border-white/10 text-white font-bold animate-pulse">
-                            {message}
+                    {dealerHand.length > 0 && (
+                        <div className="mt-2 bg-black/60 px-3 py-1 rounded-lg border border-white/10 text-white font-mono text-sm">
+                            {dealerHand.some(c => c.hidden) ? "?" : dealerScore}
                         </div>
                     )}
+                </div>
+
+                {/* Center / Message Area */}
+                <div className="flex-1 flex items-center justify-center w-full z-40 my-4 relative">
+                    <AnimatePresence mode="wait">
+                        {message && (
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                                className="px-8 py-4 bg-black/80 rounded-2xl border border-white/20 text-white font-bold text-lg shadow-2xl backdrop-blur-md max-w-md text-center"
+                            >
+                                {message}
+                            </motion.div>
+                        )}
+                        {/* Win Overlay */}
+                        {winAmount !== null && winAmount > 0 && gameState === 'finished' && (
+                            <motion.div
+                                initial={{ scale: 0, rotate: -10 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                            >
+                                <div className="bg-gradient-to-r from-yellow-500 to-amber-600 text-white text-5xl font-black px-12 py-6 rounded-3xl shadow-[0_0_50px_rgba(245,158,11,0.5)] border-4 border-yellow-200 transform -rotate-3 mb-12">
+                                    +{winAmount} TC
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Player Area */}
-                <div className="flex flex-col items-center z-10 w-full">
-                    <div className="text-indigo-400 font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
-                        Ty
-                        {playerHand.length > 0 && (
-                            <span className="bg-black/40 px-2 py-0.5 rounded text-white text-xs border border-white/10 transition-all duration-300">
-                                {playerScore}
-                            </span>
-                        )}
+                <div className="flex flex-col items-center z-30 w-full mb-8">
+                    {playerHand.length > 0 && (
+                        <div className="mb-2 bg-black/60 px-3 py-1 rounded-lg border border-white/10 text-white font-mono text-sm">
+                            {playerScore}
+                        </div>
+                    )}
+                    <div className="flex justify-center -space-x-12 h-[160px] min-w-[120px] mb-8">
+                        <AnimatePresence>
+                            {playerHand.map((card, i) => (
+                                <PlayingCard
+                                    key={`${i}-${card.suit}-${card.value}`}
+                                    index={i}
+                                    suit={card.suit}
+                                    value={card.value}
+                                />
+                            ))}
+                        </AnimatePresence>
                     </div>
-                    <div className="flex justify-center pl-[40px] mb-8 min-h-[144px]">
-                        {playerHand.map((card, i) => renderCard(card, i))}
+
+                    <div className="bg-black/20 px-4 py-1 rounded-full mb-6 border border-white/5 backdrop-blur-sm">
+                        <span className="text-indigo-200/70 text-xs font-bold tracking-widest uppercase">Gracz</span>
                     </div>
 
                     {/* Controls */}
-                    {gameState === "betting" && (
-                        <div className="flex flex-col items-center gap-6 animate-in slide-in-from-bottom-4 fade-in">
-                            <div className="flex items-center gap-4 bg-black/30 p-2 rounded-xl">
-                                <button onClick={() => setBet(Math.max(10, bet - 10))} className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition">-</button>
-                                <span className="text-2xl font-bold w-20 text-center text-yellow-500">{bet}</span>
-                                <button onClick={() => setBet(bet + 10)} className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition">+</button>
-                            </div>
-                            <button
-                                onClick={handleDeal}
-                                disabled={loading}
-                                className="px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/30 hover:scale-105 active:scale-95 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? "Rozdawanie..." : "ROZDAJ"}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Show controls only when playing AND not currently dealing/animating cards */}
-                    {gameState === "playing" && !isDealing && (
-                        <div className="flex gap-4 animate-in slide-in-from-bottom-4 fade-in">
-                            <button
-                                onClick={() => handleAction("hit")}
-                                disabled={loading}
-                                className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition hover:-translate-y-1 active:translate-y-0"
-                            >
-                                DOBIERZ
-                            </button>
-                            <button
-                                onClick={() => handleAction("stand")}
-                                disabled={loading}
-                                className="px-8 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-bold shadow-lg shadow-red-500/20 transition hover:-translate-y-1 active:translate-y-0"
-                            >
-                                CZEKAJ
-                            </button>
-                            {playerHand.length === 2 && balance && balance >= bet && (
-                                <button
-                                    onClick={() => handleAction("double")}
-                                    disabled={loading}
-                                    className="px-8 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition hover:-translate-y-1 active:translate-y-0"
+                    <div className="h-24 flex items-end">
+                        <AnimatePresence mode="wait">
+                            {gameState === "betting" ? (
+                                <motion.div
+                                    key="betting-controls"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 20 }}
+                                    className="flex flex-col items-center gap-4"
                                 >
-                                    PODWÓJ
-                                </button>
+                                    <div className="flex items-center gap-4 bg-black/50 p-2 rounded-2xl border border-white/10 backdrop-blur-md">
+                                        <button onClick={() => setCustomBet(Math.max(10, parseInt(customBet) - 10).toString())} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5">-</button>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                value={customBet}
+                                                onChange={(e) => setCustomBet(e.target.value)}
+                                                className="w-24 bg-transparent text-center text-2xl font-bold text-yellow-500 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
+                                            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] text-gray-400 font-bold tracking-wider">STAWKA</span>
+                                        </div>
+                                        <button onClick={() => setCustomBet((parseInt(customBet) + 10).toString())} className="w-10 h-10 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5">+</button>
+                                    </div>
+                                    <button
+                                        onClick={handleDeal}
+                                        disabled={loading || balance === null || parseInt(customBet) > (balance ?? 0)}
+                                        className="px-12 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-2xl font-bold text-lg shadow-[0_0_20px_rgba(79,70,229,0.4)] hover:shadow-[0_0_30px_rgba(79,70,229,0.6)] hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                    >
+                                        {loading ? "Rozdawanie..." : "ROZDAJ"}
+                                    </button>
+                                </motion.div>
+                            ) : gameState === "finished" && !isDealing ? (
+                                <motion.button
+                                    key="replay-btn"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    onClick={() => {
+                                        setGameState("betting");
+                                        setPlayerHand([]);
+                                        setDealerHand([]);
+                                        setServerPlayerHand([]);
+                                        setServerDealerHand([]);
+                                        setMessage("");
+                                        setWinAmount(null);
+                                    }}
+                                    className="px-10 py-3 bg-white text-black hover:bg-gray-100 rounded-2xl font-bold text-lg shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                                >
+                                    <RotateCcw className="w-5 h-5" />
+                                    Zagraj ponownie
+                                </motion.button>
+                            ) : !isDealing && (
+                                <motion.div
+                                    key="game-controls"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="flex gap-4"
+                                >
+                                    <button
+                                        onClick={() => handleAction("hit")}
+                                        disabled={loading}
+                                        className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 flex flex-col items-center leading-none gap-1"
+                                    >
+                                        <span>DOBIERZ</span>
+                                        <span className="text-[10px] opacity-70 font-normal">HIT</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handleAction("stand")}
+                                        disabled={loading}
+                                        className="px-8 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-bold shadow-lg shadow-red-500/20 transition hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 flex flex-col items-center leading-none gap-1"
+                                    >
+                                        <span>CZEKAJ</span>
+                                        <span className="text-[10px] opacity-70 font-normal">STAND</span>
+                                    </button>
+                                    {playerHand.length === 2 && balance && balance >= bet && (
+                                        <button
+                                            onClick={() => handleAction("double")}
+                                            disabled={loading}
+                                            className="px-8 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-xl font-bold shadow-lg shadow-yellow-500/20 transition hover:-translate-y-1 active:translate-y-0 disabled:opacity-50 flex flex-col items-center leading-none gap-1"
+                                        >
+                                            <span>PODWÓJ</span>
+                                            <span className="text-[10px] opacity-70 font-normal">DOUBLE</span>
+                                        </button>
+                                    )}
+                                </motion.div>
                             )}
-                        </div>
-                    )}
-
-                    {gameState === "finished" && !isDealing && (
-                        <button
-                            onClick={() => {
-                                setGameState("betting");
-                                setPlayerHand([]);
-                                setDealerHand([]);
-                                setServerPlayerHand([]);
-                                setServerDealerHand([]);
-                                setMessage("");
-                            }}
-                            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition animate-bounce"
-                        >
-                            ZAGRAJ PONOWNIE
-                        </button>
-                    )}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
         </div>
