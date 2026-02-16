@@ -271,7 +271,7 @@ export default function BlackjackPage() {
                     </div>
 
                     {/* Controls */}
-                    <div className="h-24 flex items-end">
+                    <div className="flex items-end">
                         <AnimatePresence mode="wait">
                             {gameState === "betting" ? (
                                 <motion.div
@@ -301,26 +301,54 @@ export default function BlackjackPage() {
                                     >
                                         {loading ? "Rozdawanie..." : "ROZDAJ"}
                                     </button>
+
+                                    {/* Refill Button if broke */}
+                                    {balance !== null && balance < 10 && (
+                                        <button
+                                            onClick={async () => {
+                                                setLoading(true);
+                                                try {
+                                                    const res = await fetch("/api/user/refill", { method: "POST" });
+                                                    if (res.ok) {
+                                                        const data = await res.json();
+                                                        setBalance(data.newBalance);
+                                                        setMessage("Otrzymałeś zapomogę: 100 TC!");
+                                                    } else {
+                                                        setMessage("Nie możesz jeszcze odebrać zapomogi.");
+                                                    }
+                                                } catch (e) {
+                                                    setMessage("Błąd sieci.");
+                                                } finally {
+                                                    setLoading(false);
+                                                }
+                                            }}
+                                            className="mt-2 text-xs text-yellow-500 hover:text-yellow-400 underline"
+                                        >
+                                            Bankrut? Odbierz 100 TC
+                                        </button>
+                                    )}
                                 </motion.div>
                             ) : gameState === "finished" && !isDealing ? (
-                                <motion.button
-                                    key="replay-btn"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    onClick={() => {
-                                        setGameState("betting");
-                                        setPlayerHand([]);
-                                        setDealerHand([]);
-                                        setServerPlayerHand([]);
-                                        setServerDealerHand([]);
-                                        setMessage("");
-                                        setWinAmount(null);
-                                    }}
-                                    className="px-10 py-3 bg-white text-black hover:bg-gray-100 rounded-2xl font-bold text-lg shadow-xl hover:scale-105 transition-all flex items-center gap-2"
-                                >
-                                    <RotateCcw className="w-5 h-5" />
-                                    Zagraj ponownie
-                                </motion.button>
+                                <div className="flex flex-col items-center gap-4">
+                                    <motion.button
+                                        key="replay-btn"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        onClick={() => {
+                                            setGameState("betting");
+                                            setPlayerHand([]);
+                                            setDealerHand([]);
+                                            setServerPlayerHand([]);
+                                            setServerDealerHand([]);
+                                            setMessage("");
+                                            setWinAmount(null);
+                                        }}
+                                        className="px-10 py-3 bg-white text-black hover:bg-gray-100 rounded-2xl font-bold text-lg shadow-xl hover:scale-105 transition-all flex items-center gap-2"
+                                    >
+                                        <RotateCcw className="w-5 h-5" />
+                                        Zagraj ponownie
+                                    </motion.button>
+                                </div>
                             ) : !isDealing && (
                                 <motion.div
                                     key="game-controls"
