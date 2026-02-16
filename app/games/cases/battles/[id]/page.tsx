@@ -130,12 +130,19 @@ export default function BattleArenaPage() {
     useEffect(() => {
         if (rouletteState === "SPINNING" && creatorStrip.length > 0 && joinerStrip.length > 0) {
             const LANDING = 45;
-            const CARD_WIDTH = 128; // Smaller cards for battle (w-32)
-            const GAP = 8;
+            const CARD_WIDTH = 128; // w-32 = 8rem = 128px
+            const GAP = 8; // gap-2 = 0.5rem = 8px
             const TOTAL_WIDTH = CARD_WIDTH + GAP;
 
-            // Target calculation
-            const targetX = -(LANDING * TOTAL_WIDTH) + 150;
+            // Random offset to simulate "near miss" (prevent landing perfectly center every time)
+            // Range: -40 to +40 px (Card is 128px wide, so it stays within the card bounds)
+            const randomOffset = Math.floor(Math.random() * 80) - 40;
+
+            // Target calculation:
+            // Shift by (Index * TotalWidth) to get start of card to center
+            // Shift by (CardWidth / 2) to get CENTER of card to center
+            // Negative because we are moving the strip LEFT
+            const targetX = -((LANDING * TOTAL_WIDTH) + (CARD_WIDTH / 2)) + randomOffset;
 
             // Simultaneous animation
             Promise.all([
