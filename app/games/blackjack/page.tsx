@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { calculateHandValue } from "@/lib/blackjack";
 
 type Card = {
     suit: "hearts" | "diamonds" | "clubs" | "spades";
@@ -106,11 +107,17 @@ export default function BlackjackPage() {
 
     // Render helper for cards
     const renderCard = (card: Card, index: number) => {
+        // Animation delay based on index for "dealing" effect
+        const animationStyle = {
+            animationDelay: `${index * 150}ms`,
+            animationFillMode: 'both'
+        };
+
         if (card.hidden) {
             return (
-                <div key={index} className="w-24 h-36 bg-indigo-900 rounded-xl border-2 border-indigo-400 flex items-center justify-center shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 relative overflow-hidden">
+                <div key={`hidden-${index}`} style={animationStyle} className="w-24 h-36 bg-indigo-900 rounded-xl border-2 border-indigo-400 flex items-center justify-center shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 relative overflow-hidden animate-in slide-in-from-top-10 fade-in duration-500">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-                    <div className="text-4xl">TEB</div>
+                    <div className="text-4xl select-none">TEB</div>
                 </div>
             );
         }
@@ -124,13 +131,16 @@ export default function BlackjackPage() {
         }[card.suit];
 
         return (
-            <div key={index} className={`w-24 h-36 bg-white rounded-xl flex flex-col items-center justify-between p-2 shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 ${isRed ? "text-red-600" : "text-black"}`}>
-                <div className="self-start font-bold text-xl">{card.value}</div>
-                <div className="text-4xl">{suitIcon}</div>
-                <div className="self-end font-bold text-xl transform rotate-180">{card.value}</div>
+            <div key={`${card.value}-${card.suit}-${index}`} style={animationStyle} className={`w-24 h-36 bg-white rounded-xl flex flex-col items-center justify-between p-2 shadow-xl transform hover:-translate-y-2 transition duration-300 ml-[-40px] first:ml-0 animate-in slide-in-from-top-10 fade-in duration-500 ${isRed ? "text-red-600" : "text-black"}`}>
+                <div className="self-start font-bold text-xl select-none">{card.value}</div>
+                <div className="text-4xl select-none">{suitIcon}</div>
+                <div className="self-end font-bold text-xl transform rotate-180 select-none">{card.value}</div>
             </div>
         );
     };
+
+    const playerScore = calculateHandValue(playerHand);
+    const dealerScore = calculateHandValue(dealerHand);
 
     return (
         <div className="min-h-screen pt-24 pb-12 px-4 bg-[#0f172a] text-white flex flex-col items-center">
@@ -151,8 +161,15 @@ export default function BlackjackPage() {
 
                 {/* Dealer Area */}
                 <div className="mb-12 flex flex-col items-center z-10 w-full">
-                    <div className="text-emerald-400 font-bold tracking-widest uppercase text-sm mb-4">Krupier</div>
-                    <div className="flex justify-center pl-[40px]">
+                    <div className="text-emerald-400 font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+                        Krupier
+                        {dealerHand.length > 0 && (
+                            <span className="bg-black/40 px-2 py-0.5 rounded text-white text-xs border border-white/10">
+                                {dealerHand.some(c => c.hidden) ? "?" : dealerScore}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex justify-center pl-[40px] min-h-[144px]">
                         {dealerHand.map((card, i) => renderCard(card, i))}
                     </div>
                 </div>
@@ -168,8 +185,15 @@ export default function BlackjackPage() {
 
                 {/* Player Area */}
                 <div className="flex flex-col items-center z-10 w-full">
-                    <div className="text-indigo-400 font-bold tracking-widest uppercase text-sm mb-4">Ty</div>
-                    <div className="flex justify-center pl-[40px] mb-8">
+                    <div className="text-indigo-400 font-bold tracking-widest uppercase text-sm mb-4 flex items-center gap-2">
+                        Ty
+                        {playerHand.length > 0 && (
+                            <span className="bg-black/40 px-2 py-0.5 rounded text-white text-xs border border-white/10">
+                                {playerScore}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex justify-center pl-[40px] mb-8 min-h-[144px]">
                         {playerHand.map((card, i) => renderCard(card, i))}
                     </div>
 
