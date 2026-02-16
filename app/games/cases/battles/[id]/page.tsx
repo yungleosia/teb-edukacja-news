@@ -99,8 +99,6 @@ export default function BattleArenaPage() {
     }, [battle, rouletteState]);
 
     const startSpin = (b: BattleFull) => {
-        setRouletteState("SPINNING");
-
         // Logic similar to single open, but for TWO strips.
         // Round 1 (Single round for V1)
         const round = b.rounds[0];
@@ -117,29 +115,37 @@ export default function BattleArenaPage() {
 
         const cStrip = Array(50).fill(null).map(() => skins[Math.floor(Math.random() * skins.length)]);
         cStrip[LANDING] = creatorWin;
-        setCreatorStrip(cStrip);
 
         const jStrip = Array(50).fill(null).map(() => skins[Math.floor(Math.random() * skins.length)]);
         jStrip[LANDING] = joinerWin;
+
+        setCreatorStrip(cStrip);
         setJoinerStrip(jStrip);
 
-        // Animate
-        const CARD_WIDTH = 128; // Smaller cards for battle (w-32)
-        const GAP = 8;
-        const TOTAL_WIDTH = CARD_WIDTH + GAP;
-
-        // Offset logic
-        const offset = Math.floor(Math.random() * 50) - 25;
-        const targetX = -(LANDING * TOTAL_WIDTH) + 150; // Center roughly (tuning needed)
-
-        // Simultaneous
-        Promise.all([
-            creatorControls.start({ x: targetX, transition: { duration: 5, ease: [0.1, 0.8, 0.25, 1] } }),
-            joinerControls.start({ x: targetX, transition: { duration: 5, ease: [0.1, 0.8, 0.25, 1] } })
-        ]).then(() => {
-            setRouletteState("DONE");
-        });
+        // Trigger spin state, effect will pick up and animate
+        setRouletteState("SPINNING");
     };
+
+    // Actual Animation Trigger
+    useEffect(() => {
+        if (rouletteState === "SPINNING" && creatorStrip.length > 0 && joinerStrip.length > 0) {
+            const LANDING = 45;
+            const CARD_WIDTH = 128; // Smaller cards for battle (w-32)
+            const GAP = 8;
+            const TOTAL_WIDTH = CARD_WIDTH + GAP;
+
+            // Target calculation
+            const targetX = -(LANDING * TOTAL_WIDTH) + 150;
+
+            // Simultaneous animation
+            Promise.all([
+                creatorControls.start({ x: targetX, transition: { duration: 5, ease: [0.1, 0.8, 0.25, 1] } }),
+                joinerControls.start({ x: targetX, transition: { duration: 5, ease: [0.1, 0.8, 0.25, 1] } })
+            ]).then(() => {
+                setRouletteState("DONE");
+            });
+        }
+    }, [rouletteState, creatorStrip, joinerStrip, creatorControls, joinerControls]);
 
     const handleJoin = async () => {
         if (!battle || joining) return;
