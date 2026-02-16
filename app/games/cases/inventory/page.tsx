@@ -28,19 +28,42 @@ export default function InventoryPage() {
     }, []);
 
     const handleSell = async (itemId: string) => {
-        if (!confirm("Na pewno chcesz sprzedać ten przedmiot?")) return;
+        // Optimistic UI update could be added here, but for now we wait for API
+        try {
+            const res = await fetch("/api/cases/sell", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ itemIds: [itemId] })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setBalance(data.newBalance);
+                setItems(prev => prev.filter(i => i.id !== itemId));
+            } else {
+                alert(data.error);
+            }
+        } catch (e) {
+            alert("Błąd sprzedaży");
+        }
+    };
+
+    const handleSellAll = async () => {
+        if (!items.length) return;
+        const totalValue = items.reduce((sum, i) => sum + i.skin.price, 0);
+
+        if (!confirm(`Czy na pewno chcesz sprzedać WSZYSTKO (${items.length} przedmiotów) za ${totalValue} TC?`)) return;
 
         try {
             const res = await fetch("/api/cases/sell", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ itemId })
+                body: JSON.stringify({ itemIds: items.map(i => i.id) })
             });
             const data = await res.json();
             if (data.success) {
                 setBalance(data.newBalance);
-                // Remove from list
-                setItems(prev => prev.filter(i => i.id !== itemId));
+                setItems([]); // Clear all
+                alert(data.message);
             } else {
                 alert(data.error);
             }
@@ -56,11 +79,21 @@ export default function InventoryPage() {
                     <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition" />
                     Wróć do skrzynek
                 </Link>
-                <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                    <Coins className="w-5 h-5 text-yellow-500" />
-                    <span className="text-yellow-500 font-bold text-xl tabular-nums">
-                        {typeof balance === 'number' ? balance.toLocaleString() : "..."} TC
-                    </span>
+                <div className="flex items-center gap-4">
+                    {items.length > 0 && (
+                        <button
+                            onClick={handleSellAll}
+                            className="bg-red-600/20 text-red-400 border border-red-600/50 px-4 py-2 rounded-xl hover:bg-red-600 hover:text-white transition font-bold text-sm flex items-center gap-2"
+                        >
+                            <Trash2 className="w-4 h-4" /> Sprzedaj wszystko ({items.reduce((sum, i) => sum + i.skin.price, 0)} TC)
+                        </button>
+                    )}
+                    <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+                        <Coins className="w-5 h-5 text-yellow-500" />
+                        <span className="text-yellow-500 font-bold text-xl tabular-nums">
+                            {typeof balance === 'number' ? balance.toLocaleString() : "..."} TC
+                        </span>
+                    </div>
                 </div>
             </div>
 

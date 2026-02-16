@@ -9,54 +9,53 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { itemId } = await req.json();
+    const { itemId, itemIds } = await req.json();
+
+    // Support single or bulk
+    const idsToSell = itemIds || (itemId ? [itemId] : []);
+
+    if (idsToSell.length === 0) {
+        return NextResponse.json({ error: "No items selected" }, { status: 400 });
+    }
 
     try {
-        // 1. Find Item & Verify Ownership
-        const userItem = await prisma.userItem.findUnique({
-            where: { id: itemId },
-            include: { skin: true, user: true }
+        // 1. Find Items & Verify Ownership
+        const userItems = await prisma.userItem.findMany({
+            where: {
+                id: { in: idsToSell },
+                user: { email: session.user.email },
+                status: "INVENTORY"
+            },
+            include: { skin: true }
         });
 
-        if (!userItem) {
-            return NextResponse.json({ error: "Item not found" }, { status: 404 });
+        if (userItems.length === 0) {
+            return NextResponse.json({ error: "No sellable items found" }, { status: 404 });
         }
 
-        if (userItem.user.email !== session.user.email) {
-            return NextResponse.json({ error: "Not your item" }, { status: 403 });
-        }
+        // 2. Calculate Total
+        const totalSalePrice = userItems.reduce((sum, item) => sum + item.skin.price, 0);
 
-        if (userItem.status !== "INVENTORY") {
-            return NextResponse.json({ error: "Item already sold or not available" }, { status: 400 });
-        }
-
-        // 2. Mark as Sold (or delete)
-        // Let's delete it to keep DB clean or mark as SOLD? 
-        // User requested "sell for tebcoins". 
-        // We'll mark as SOLD for history, or delete. 
-        // Let's delete to prevent massive table growth if not needed.
-        // Actually, marking as SOLD is better for history.
-
-        await prisma.userItem.update({
-            where: { id: itemId },
-            data: { status: "SOLD" }
-        });
-
-        // 3. Add Balance
-        const salePrice = userItem.skin.price; // Full price? Or cut? Usually full price in these simulated games.
-
-        const updatedUser = await prisma.user.update({
-            where: { email: session.user.email },
-            data: { tebCoins: { increment: salePrice } }
-        });
+        // 3. Transaction: Update Items & User Balance
+        const [updatedBatch, updatedUser] = await prisma.$transaction([
+            prisma.userItem.updateMany({
+                where: { id: { in: userItems.map(i => i.id) } },
+                data: { status: "SOLD" }
+            }),
+            prisma.user.update({
+                where: { email: session.user.email },
+                data: { tebCoins: { increment: totalSalePrice } }
+            })
+        ]);
 
         return NextResponse.json({
             success: true,
-            message: `Sprzedano ${userItem.skin.name} za ${salePrice} TC`,
+            message: `Sprzedano ${userItems.length} przedmiotów za ${totalSalePrice} TC`,
             newBalance: updatedUser.tebCoins
         });
 
     } catch (error) {
+        console.error(error);
         return NextResponse.json({ error: "Internal error" }, { status: 500 });
     }
 }
