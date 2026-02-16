@@ -1,36 +1,53 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// Reliable placeholders since external links are flaky and AI gen is busy
+const SKINS = {
+    M4A4_NEO: "https://placehold.co/400x300/1e293b/ec4899?text=M4A4+Neo-Noir",
+    MP7_BLOOD: "https://placehold.co/400x300/1e293b/ef4444?text=MP7+Bloodsport",
+    USP_CORTEX: "https://placehold.co/400x300/1e293b/a855f7?text=USP-S+Cortex",
+    GLOCK_MOON: "https://placehold.co/400x300/1e293b/3b82f6?text=Glock-18+Moonrise",
+    MAG7_SWAG: "https://placehold.co/400x300/1e293b/eab308?text=MAG-7+SWAG-7",
+    AK47_FUEL: "https://placehold.co/400x300/1e293b/f59e0b?text=AK-47+Fuel+Injector",
+    AWP_ELITE: "https://placehold.co/400x300/1e293b/94a3b8?text=AWP+Elite+Build",
+    NOVA_HYPER: "https://placehold.co/400x300/1e293b/10b981?text=Nova+Hyper+Beast",
+    AWP_DRAGON: "https://placehold.co/400x300/1e293b/d97706?text=AWP+Dragon+Lore",
+    M4A4_HOWL: "https://placehold.co/400x300/1e293b/dc2626?text=M4A4+Howl",
+    CASE_CLUTCH: "https://placehold.co/400x300/1e293b/6366f1?text=Clutch+Case",
+    CASE_WILDFIRE: "https://placehold.co/400x300/1e293b/f97316?text=Wildfire+Case",
+    CASE_DRAGON: "https://placehold.co/400x300/1e293b/fbbf24?text=Dragon+Lore+Case"
+};
+
 const CASES = [
     {
         name: "Clutch Case",
-        image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naTMfWwTuIq1zNCOw_H3Y7iFwD4I6p102LqYrI7xjAXg-hA4MTr1JNfAJgM8NVrZr1jrk-cvg568u5ycn3Mz7yEm5yrZzR2wg0wVb-Zt06adQ10C/256fx256f",
+        image: SKINS.CASE_CLUTCH,
         price: 25,
         skins: [
-            { name: "M4A4 | Neo-Noir", rarity: "ancient", price: 2500, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITCmGpa7cd4nuz-8oP5jGu4ohQ0J3egI4ORcQNuM1iDq1S_wO_q05TvtZTMziR9-n51Z4uz9G4/360fx360f" },
-            { name: "MP7 | Bloodsport", rarity: "ancient", price: 500, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou6ryFABz7P7YJgJA4NO5k9SKqP_xMq3I2DIDu50pj-3F9on23QDjrRdsYjiiJ9OQJQ88Y1DT-gO-x-3qjJ66u8yYwHU16SFw5ymJl0TmgVtOYLFxxavJz5M2/360fx360f" },
-            { name: "USP-S | Cortex", rarity: "legendary", price: 300, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpoo6m1FBRp3_b3cpxo5Mz3r7-Jm_L7Pr7YhW5d_8t03L-V8dyiimHl-0E6MTr1d9SQcVNoYVHQ_FantO_n0cW56Micymwj5Hfnl3v_3Q/360fx360f" },
-            { name: "Glock-18 | Moonrise", rarity: "mythical", price: 50, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgposbaqKAxf0v73cy9H_9SznYmMqP_xMq3I2DIDu50pj-3F9on23QDjrRdsYjiiJ9OQJQ88Y1DT-gO-x-3qjJ66u8yYwHU16SFw5ymJl0TmgVtOYLFxxavJz5M2/360fx360f" },
-            { name: "MAG-7 | SWAG-7", rarity: "rare", price: 15, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou7umeldf0Ob3fDxBvYz4k7-HnvD8J_WAz2lV7cAh3frD8I_3jVa1-hY6MmD1d9eWclU9YAmD-1S_xLq6hJS_tMic1zI/360fx360f" },
+            { name: "M4A4 | Neo-Noir", rarity: "ancient", price: 2500, image: SKINS.M4A4_NEO },
+            { name: "MP7 | Bloodsport", rarity: "ancient", price: 500, image: SKINS.MP7_BLOOD },
+            { name: "USP-S | Cortex", rarity: "legendary", price: 300, image: SKINS.USP_CORTEX },
+            { name: "Glock-18 | Moonrise", rarity: "mythical", price: 50, image: SKINS.GLOCK_MOON },
+            { name: "MAG-7 | SWAG-7", rarity: "rare", price: 15, image: SKINS.MAG7_SWAG },
         ]
     },
     {
         name: "Wildfire Case",
-        image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naTMfWwTuIq1zNCOw_H3Y7iFwD4I6p102LqYrI7xjAXg-hA4MTr1JNfAJgM8NVrZr1jrk-cvg568u5ycn3Mz7yEm5yrZzR2wg0wVb-Zt06adQ10C/256fx256f",
+        image: SKINS.CASE_WILDFIRE,
         price: 40,
         skins: [
-            { name: "AK-47 | Fuel Injector", rarity: "ancient", price: 3500, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot7HxfDhjxszJemkV092lnYmGm_r2Or7clXlU7tFzh9bN_Iv9nBrmr0c_Nm-lcYaddg9qMAvS_wftx-7ugpG5vZqdyyd9-n51Q5-le8k/360fx360f" },
-            { name: "AWP | Elite Build", rarity: "legendary", price: 800, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G0GvZYhj-vT8InxgUG55RA5Mm2gcYPBcAA5ZA3W_FS7xuvsgJW578_BznQ26XUqsyrYnEC0m1gSOcYk/360fx360f" },
-            { name: "Nova | Hyper Beast", rarity: "legendary", price: 300, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou7umeldf0Ob3fDxBvYz4k7-HnvD8J_WAz2lV7cAh3frD8I_3jVa1-hY6MmD1d9eWclU9YAmD-1S_xLq6hJS_tMic1zI/360fx360f" },
+            { name: "AK-47 | Fuel Injector", rarity: "ancient", price: 3500, image: SKINS.AK47_FUEL },
+            { name: "AWP | Elite Build", rarity: "legendary", price: 800, image: SKINS.AWP_ELITE },
+            { name: "Nova | Hyper Beast", rarity: "legendary", price: 300, image: SKINS.NOVA_HYPER },
         ]
     },
     {
         name: "Dragon Lore Case",
-        image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXU5A1PIYQNqhpOSV-fRPasw8rsUFJ5KBFZv668FFQ1naTMfWwTuIq1zNCOw_H3Y7iFwD4I6p102LqYrI7xjAXg-hA4MTr1JNfAJgM8NVrZr1jrk-cvg568u5ycn3Mz7yEm5yrZzR2wg0wVb-Zt06adQ10C/256fx256f",
+        image: SKINS.CASE_DRAGON,
         price: 300,
         skins: [
-            { name: "AWP | Dragon Lore", rarity: "ancient", price: 50000, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpot621FAR17PLfYQJD_9W7m5a0mvLwOq7c2G0GvZYhj-vT8InxgUG55RA5Mm2gcYPBcAA5ZA3W_FS7xuvsgJW578_BznQ26XUqsyrYnEC0m1gSOcYk/360fx360f" },
-            { name: "M4A4 | Howl", rarity: "contraband", price: 20000, image: "https://steamcommunity-a.akamaihd.net/economy/image/-9a81dlWLwJ2UUGcVs_nsVtzdOEdtWwKGZZLQHTxDZ7I56KU0Zwwo4NUX4oFJZEHLbXH5ApeO4YmlhxYQknCRvCo04DEVlxkKgpou-6kejhz2v_Nfz5H_uO1gb-Gw_alIITCmGpa7cd4nuz-8oP5jGu4ohQ0J3egI4ORcQNuM1iDq1S_wO_q05TvtZTMziR9-n51Z4uz9G4/360fx360f" },
+            { name: "AWP | Dragon Lore", rarity: "ancient", price: 50000, image: SKINS.AWP_DRAGON },
+            { name: "M4A4 | Howl", rarity: "contraband", price: 20000, image: SKINS.M4A4_HOWL },
         ]
     }
 ];
