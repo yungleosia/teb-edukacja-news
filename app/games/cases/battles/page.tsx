@@ -39,11 +39,13 @@ export default function BattlesLobbyPage() {
         }
     };
 
-    const handleCreate = async (caseId: string) => {
-        if (!confirm("Utworzyć bitwę za cenę skrzynki?")) return;
+    const handleCreate = async (caseId: string, botMode = false) => {
+        if (!confirm(botMode ? "Zagrać z Botem?" : "Utworzyć bitwę za cenę skrzynki?")) return;
+
+        const endpoint = botMode ? "/api/battles/bot" : "/api/battles/create";
 
         try {
-            const res = await fetch("/api/battles/create", {
+            const res = await fetch(endpoint, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ caseId })
@@ -174,13 +176,26 @@ export default function BattlesLobbyPage() {
                             {cases.map(c => (
                                 <button
                                     key={c.id}
-                                    onClick={() => handleCreate(c.id)}
-                                    className="bg-[#0f172a] hover:bg-[#253248] border border-white/5 hover:border-yellow-500/50 rounded-xl p-4 flex flex-col items-center gap-3 transition group"
+                                    className="bg-[#0f172a] hover:bg-[#253248] border border-white/5 hover:border-yellow-500/50 rounded-xl p-4 flex flex-col items-center gap-3 transition group relative"
                                 >
                                     <SkinImage src={c.image} className="w-24 h-24 object-contain group-hover:scale-110 transition-transform" />
-                                    <div className="text-center">
+                                    <div className="text-center mb-2">
                                         <p className="font-bold">{c.name}</p>
                                         <p className="text-yellow-500 text-sm font-bold">{c.price} TC</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 w-full mt-auto">
+                                        <button
+                                            onClick={() => handleCreate(c.id, false)}
+                                            className="bg-yellow-600 hover:bg-yellow-500 text-xs font-bold py-2 rounded-lg"
+                                        >
+                                            PVP
+                                        </button>
+                                        <button
+                                            onClick={() => handleCreate(c.id, true)}
+                                            className="bg-purple-600 hover:bg-purple-500 text-xs font-bold py-2 rounded-lg"
+                                        >
+                                            BOT
+                                        </button>
                                     </div>
                                 </button>
                             ))}

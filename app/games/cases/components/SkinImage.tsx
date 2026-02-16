@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ImgHTMLAttributes, DetailedHTMLProps } from "react";
 import { cn } from "@/lib/utils";
 
-interface SkinImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface SkinImageProps extends DetailedHTMLProps<ImgHTMLAttributes<HTMLImageElement>, HTMLImageElement> {
     fallbackSrc?: string;
 }
 

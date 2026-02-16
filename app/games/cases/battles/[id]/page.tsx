@@ -8,7 +8,7 @@ import Link from "next/link";
 import { ChevronLeft, Coins, Loader2, Swords, Trophy, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
-import SkinImage from "../components/SkinImage";
+import SkinImage from "../../components/SkinImage";
 
 // Types
 type SkinWithDetails = Skin;
@@ -25,7 +25,7 @@ type BattleFull = CaseBattle & {
 };
 
 export default function BattleArenaPage() {
-    const { id } = useParams();
+    const { id } = useParams() as { id: string };
     const { data: session } = useSession();
     const [battle, setBattle] = useState<BattleFull | null>(null);
     const [loading, setLoading] = useState(true);
